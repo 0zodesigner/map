@@ -1,993 +1,658 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Mapbox Feature Demo</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Enhanced Venue Finder</title>
+
     <!-- Mapbox GL JS CSS -->
-    <link href="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css" rel="stylesheet">
-    <!-- Font Awesome (for icons) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
     <style>
         /* --- Basic Reset & Body --- */
-        :root {
-            --primary-green: #00c853;
-            --dark-green: #00a744;
-            --light-green-bg: #e0f2f1;
-            --white: #fff;
-            --grey-light: #f0f0f0;
-            --grey-medium: #ccc;
-            --grey-dark: #888;
-            --text-dark: #333;
-            --text-medium: #555;
-            --text-light: #777;
-            --accent-red: #f50057;
-            --accent-blue: #1976D2;
-            --star-yellow: #FFC107;
-            --traffic-heavy: #dc3545;
-            --traffic-medium: #ffc107;
-            --traffic-light: #28a745;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f0f0f0; display: flex; justify-content: center; align-items: flex-start; padding-top: 20px; }
 
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--light-green-bg);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--text-dark);
-            overflow: hidden; /* Prevent body scroll */
-        }
+        /* --- Phone Container --- */
+        .phone-container { width: 375px; height: 812px; background-color: #ffffff; border-radius: 40px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); overflow: hidden; position: relative; display: flex; flex-direction: column; }
 
-        /* --- Mobile Frame Simulation --- */
-        .mobile-frame {
-            width: 390px; height: 844px; border-radius: 40px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            overflow: hidden; position: relative; background-color: var(--white);
-        }
-        .app-container { width: 100%; height: 100%; position: relative; overflow: hidden; }
+        /* --- Screen Containers --- */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #fff; display: flex; flex-direction: column; transition: transform 0.3s ease-in-out; }
+        .map-screen { z-index: 1; }
+        .filter-screen { z-index: 20; transform: translateY(100%); }
+        .filter-screen.visible { transform: translateY(0); }
+        .detail-screen { z-index: 30; transform: translateX(100%); background-color: #f8f8f8; /* Slightly off-white */}
+        .detail-screen.visible { transform: translateX(0); }
 
-        /* --- Map --- */
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
-        .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; } /* Hide Mapbox logo/attribution - add manually if needed */
+        /* --- Common Top Bar / Nav --- */
+        .top-bar, .filter-nav, .detail-nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; padding-top: 50px; background-color: #fff; border-bottom: 1px solid #e0e0e0; flex-shrink: 0; }
+        .top-bar h1, .filter-nav h2, .detail-nav h2 { font-size: 16px; font-weight: 600; color: #333; text-align: center; flex-grow: 1;}
+        .top-bar i, .filter-nav button, .detail-nav button { font-size: 20px; color: #007AFF; cursor: pointer; background: none; border: none; padding: 5px; }
+        .filter-nav button, .detail-nav button { font-size: 16px; }
+        .filter-nav button.apply, .detail-nav button.placeholder { font-weight: 600; color: #007AFF; }
+        .detail-nav button.back-button { text-align: left; flex-grow: 0; min-width: 60px;}
+        .detail-nav button.placeholder { min-width: 60px; visibility: hidden;} /* To balance the title */
 
-        /* --- General UI Elements --- */
-        .hidden { display: none !important; visibility: hidden; opacity: 0; }
-        .loading-spinner {
-            border: 3px solid var(--grey-light); border-top: 3px solid var(--primary-green);
-            border-radius: 50%; width: 20px; height: 20px;
-            animation: spin 1s linear infinite; margin: 5px auto;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* --- Map Screen Specific --- */
+        .search-bar { display: flex; align-items: center; padding: 8px 15px; margin: 10px 15px; background-color: #f8f8f8; border-radius: 10px; border: 1px solid #eee; z-index: 5; }
+        .search-bar i { color: #8e8e93; margin-right: 8px; }
+        .search-bar input { flex-grow: 1; border: none; outline: none; background: transparent; font-size: 15px; }
+        .search-bar input::placeholder { color: #c7c7cc; }
+        #map { flex-grow: 1; position: relative; /* Changed from absolute */}
+        .map-overlay-buttons { position: absolute; bottom: 100px; /* Above carousel */ right: 15px; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
+        .map-overlay-buttons button { background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); border: 1px solid #ddd; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; }
+        .map-overlay-buttons button i { font-size: 18px; color: #333; }
 
-        /* --- Search Bar & Autocomplete --- */
-        .search-container { position: absolute; top: 50px; left: 15px; right: 15px; z-index: 10; }
-        .search-bar {
-            background-color: var(--white); border-radius: 30px; padding: 10px 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); display: flex; align-items: center;
-        }
-        .search-bar .icon { color: var(--grey-dark); margin: 0 8px; }
-        .search-bar .mic-icon { color: var(--primary-green); margin-left: auto; }
-        .search-bar input { flex-grow: 1; border: none; outline: none; font-size: 16px; margin: 0 5px; }
-        .search-bar .clear-button {
-             background: none; border: none; font-size: 20px; color: var(--grey-medium); cursor: pointer; padding: 0 5px; margin-left: 5px;
-        }
-        #search-results {
-            list-style: none; padding: 0; margin: 5px 0 0 0; background: var(--white);
-            border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-height: 250px;
-            overflow-y: auto; border: 1px solid var(--grey-light);
-        }
-        #search-results li { padding: 12px 15px; border-bottom: 1px solid var(--grey-light); cursor: pointer; font-size: 14px; }
-        #search-results li:last-child { border-bottom: none; }
-        #search-results li:hover { background-color: var(--grey-light); }
-        #search-results li small { display: block; color: var(--text-light); margin-top: 2px; font-size: 12px; }
-        #search-loading { text-align: center; padding: 10px; }
+        /* --- Venue Carousel --- */
+        .carousel-container { position: absolute; bottom: 70px; left: 0; width: 100%; z-index: 5; background: linear-gradient(to top, rgba(255,255,255,1) 50%, rgba(255,255,255,0.8) 70%, transparent); padding-top: 10px; /* Gradient space */}
+        .venue-carousel { padding: 10px 0 15px 15px; overflow-x: scroll; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .venue-carousel::-webkit-scrollbar { display: none; }
+        .venue-card { display: inline-block; width: 250px; background-color: #ffffff; border-radius: 12px; margin-right: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); overflow: hidden; vertical-align: top; white-space: normal; cursor: pointer; }
+        .venue-card img { width: 100%; height: 100px; object-fit: cover; display: block; background-color: #eee; }
+        .venue-card .info { padding: 10px 12px; }
+        .venue-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .venue-card .distance, .venue-card .categories, .venue-card .rating span { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
+        .venue-card .distance i { margin-right: 4px; color: #888; }
+        .venue-card .rating i { color: #ffa900; font-size: 11px; margin-right: 1px; }
+        .venue-card .rating span { display: inline; margin-left: 5px; color: #888; }
+        .venue-card .categories { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; color: #888; }
+        .empty-state-message { text-align: center; color: #888; font-size: 14px; padding: 30px 15px; display: none; /* Hidden by default */ }
 
-        /* --- Category Filters --- */
-        #category-filters {
-            position: absolute; top: 110px; /* Below search */ left: 15px; right: 15px; z-index: 9;
-            display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; /* For scrollbar */
-             scrollbar-width: none; /* Firefox */
-        }
-        #category-filters::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
-        .category-button {
-            background-color: rgba(255,255,255,0.9); border: 1px solid var(--grey-medium); border-radius: 20px;
-            padding: 6px 12px; font-size: 13px; cursor: pointer; white-space: nowrap;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: background-color 0.2s, border-color 0.2s; color: var(--text-medium);
-        }
-        .category-button i { margin-right: 5px; }
-        .category-button:hover, .category-button.active { background-color: var(--light-green-bg); border-color: var(--primary-green); color: var(--dark-green); }
+        /* --- Tab Bar --- */
+        .tab-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; padding-bottom: 15px; background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 8px; z-index: 10; }
+        .tab-item { display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 10px; cursor: pointer; text-decoration: none; flex: 1; position: relative; }
+        .tab-item i { font-size: 22px; margin-bottom: 3px; }
+        .tab-item.active { color: #007AFF; }
+        .tab-item.central-tab { margin-top: -25px; }
+        .tab-item.central-tab .icon-background { background-color: #007AFF; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 5px; box-shadow: 0 4px 10px rgba(0, 122, 255, 0.4); }
+        .tab-item.central-tab .icon-background i { font-size: 24px; margin: 0; }
+        .tab-item.central-tab span { margin-top: 25px; }
 
-        /* --- Locate Me Button --- */
-        .locate-button {
-            position: absolute; bottom: 100px; right: 15px; background-color: var(--white);
-            border: none; border-radius: 50%; width: 45px; height: 45px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            z-index: 10; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 18px; color: var(--text-medium);
-        }
-        .locate-button:hover { background-color: var(--grey-light); }
+        /* --- Filter Screen Specific --- */
+        .filter-content { flex-grow: 1; overflow-y: auto; padding: 20px; }
+        .filter-section { margin-bottom: 30px; }
+        .filter-section h3 { font-size: 15px; font-weight: 600; margin-bottom: 15px; color: #333; }
+        .filter-tags, .filter-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+        .filter-tag { display: inline-flex; align-items: center; background-color: #eef1f4; color: #007AFF; padding: 6px 12px; border-radius: 15px; font-size: 13px; cursor: default; }
+        .filter-tag i { margin-left: 6px; font-size: 12px; color: #a0a0a0; cursor: pointer; }
+        .filter-chip { display: inline-flex; align-items: center; padding: 8px 15px; border-radius: 20px; font-size: 14px; cursor: pointer; background-color: #f8f8f8; border: 1px solid #f0f0f0; color: #333; transition: all 0.2s ease; }
+        .filter-chip i { margin-right: 6px; font-size: 16px; color: #8e8e93; }
+        .filter-chip.add-style i { color: #007AFF; }
+        .filter-chip.selected { background-color: #e0efff; border-color: #b3d7ff; color: #0056b3; }
+        .filter-chip.selected i { color: #007AFF; }
+        .distance-slider { width: 100%; cursor: pointer; accent-color: #007AFF; }
+        .distance-labels { display: flex; justify-content: space-between; font-size: 12px; color: #8e8e93; margin-top: 8px; }
+        .toggle-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .toggle-item label { font-size: 15px; }
+        .toggle-switch { position: relative; display: inline-block; width: 51px; height: 31px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e9e9eb; transition: .4s; border-radius: 34px; }
+        .toggle-slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        input:checked + .toggle-slider { background-color: #007AFF; } /* Blue to match design */
+        input:checked + .toggle-slider:before { transform: translateX(20px); }
 
-        /* --- Bottom Navigation --- */
-        .bottom-nav {
-            position: absolute; bottom: 0; left: 0; right: 0; background-color: var(--white);
-            border-top-left-radius: 25px; border-top-right-radius: 25px; padding: 10px 15px 25px 15px;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); z-index: 10; display: flex; justify-content: space-around;
-            align-items: center; transition: transform 0.3s ease-in-out;
-        }
-        .bottom-nav.hidden { transform: translateY(100%); }
-        .nav-icon { background: none; border: none; font-size: 22px; color: var(--text-light); cursor: pointer; padding: 5px; }
-        .nav-icon:hover { color: var(--primary-green); }
-        .nav-center-button {
-            background-color: var(--primary-green); border: none; border-radius: 50%; width: 60px; height: 60px;
-            color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 200, 83, 0.4);
-            display: flex; justify-content: center; align-items: center; transform: translateY(-15px);
-        }
+        /* --- Detail Screen Specific --- */
+        .detail-content { flex-grow: 1; overflow-y: auto; }
+        .detail-image-gallery { height: 250px; background-color: #ddd; display: flex; overflow-x: scroll; scroll-snap-type: x mandatory; }
+        .detail-image-gallery img { width: 100%; height: 100%; object-fit: cover; flex-shrink: 0; scroll-snap-align: center; }
+        .detail-info { padding: 20px; background-color: #fff; }
+        .detail-info h3 { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+        .detail-info .categories, .detail-info .address, .detail-info .hours { font-size: 14px; color: #555; margin-bottom: 8px; display: flex; align-items: flex-start; }
+        .detail-info .categories i, .detail-info .address i, .detail-info .hours i { color: #888; width: 20px; margin-right: 8px; text-align: center; margin-top: 2px;}
+        .detail-actions { padding: 15px 20px; background-color: #fff; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        .detail-actions button, .detail-actions a { flex: 1; padding: 12px; font-size: 15px; font-weight: 600; border-radius: 8px; text-align: center; cursor: pointer; text-decoration: none; }
+        .detail-actions .directions { background-color: #007AFF; color: white; border: none;}
+        .detail-actions .call, .detail-actions .website { background-color: #eef1f4; color: #007AFF; border: none;}
+        #detailMapContainer { height: 150px; margin: 20px; border-radius: 10px; overflow: hidden; border: 1px solid #eee;}
+        #detailMap { width: 100%; height: 100%; }
+        .detail-section { padding: 20px; background-color: #fff; margin-top: 10px; }
+        .detail-section h4 { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+        .detail-reviews p, .detail-description p { font-size: 14px; color: #444; line-height: 1.5; }
 
-        /* --- Bottom Panels (Shared) --- */
-        .bottom-panel {
-            position: absolute; bottom: 0; left: 0; right: 0; background-color: var(--white);
-            border-top-left-radius: 25px; border-top-right-radius: 25px; box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
-            z-index: 20; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            max-height: 75%; /* Increased max-height */ overflow: hidden; display: flex; flex-direction: column;
-        }
-        .bottom-panel.visible { transform: translateY(0); }
-        .panel-handle { width: 40px; height: 5px; background-color: var(--grey-medium); border-radius: 3px; margin: 10px auto 5px auto; flex-shrink: 0; }
-        .panel-content { padding: 0px 20px 25px 20px; overflow-y: auto; flex-grow: 1; }
+        /* --- Mapbox Overrides & Markers --- */
+        .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
+        .mapboxgl-marker { cursor: pointer; }
+        /* Custom Marker Style */
+        .custom-marker { width: 24px; height: 24px; border-radius: 50%; background-color: #007AFF; border: 3px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center;}
+        .custom-marker i { color: white; font-size: 12px; } /* Example: Icon inside marker */
+        .custom-marker.selected { background-color: #ff9500; /* Orange when selected */ } /* Example selected state */
 
-        /* --- Location Detail Panel --- */
-        #location-panel .location-image { width: 100%; height: 180px; object-fit: cover; border-radius: 15px; margin-bottom: 15px; }
-        #location-panel h3 { margin: 0 0 5px 0; font-size: 20px; font-weight: 600; }
-        .location-rating { font-size: 14px; color: var(--text-medium); margin-bottom: 20px; display: flex; align-items: center; flex-wrap: wrap; }
-        .location-rating .star-icon { color: var(--star-yellow); margin-right: 4px; }
-        .location-status { font-size: 12px; padding: 3px 8px; border-radius: 15px; margin-left: 10px; font-weight: 500; }
-        .location-status.open { background-color: var(--light-green-bg); color: var(--dark-green); }
-        .location-status-detail { margin-left: 5px; font-size: 13px; color: var(--text-light); }
-        .more-options { margin-left: auto; background: none; border: none; color: var(--grey-dark); font-size: 18px; cursor: pointer; }
-
-        /* --- Directions Panel --- */
-        .directions-input-group { border: 1px solid var(--grey-light); border-radius: 10px; margin-bottom: 20px; padding: 5px 0; }
-        .directions-input { display: flex; align-items: center; padding: 10px 15px; font-size: 15px; position: relative; }
-        .directions-input:first-child { border-bottom: 1px solid var(--grey-light); }
-        .directions-input i { margin-right: 12px; width: 20px; text-align: center; }
-        .origin-icon { color: var(--primary-green); }
-        .destination-icon { color: var(--accent-red); }
-        .swap-button {
-            position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background-color: var(--grey-light);
-            border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 14px; cursor: pointer; color: var(--text-medium);
-        }
-        .travel-modes { display: flex; justify-content: space-around; margin-bottom: 20px; }
-        .travel-mode {
-            background: none; border: 1px solid var(--grey-light); border-radius: 10px; padding: 10px 5px;
-            cursor: pointer; text-align: center; width: 65px; transition: background-color 0.2s, border-color 0.2s;
-            font-size: 12px; color: var(--text-medium); position: relative;
-        }
-         .travel-mode .loading-spinner { position: absolute; top: 10px; left: 0; right: 0; margin: auto; }
-         .travel-mode .content.loading { opacity: 0.3; }
-        .travel-mode i { display: block; font-size: 20px; margin-bottom: 5px; }
-        .travel-mode span { display: block; font-weight: 500; }
-        .travel-mode:hover { background-color: var(--grey-light); }
-        .travel-mode.active { border-color: var(--primary-green); background-color: var(--light-green-bg); color: var(--dark-green); }
-
-        #step-by-step-container { margin-top: 15px; border-top: 1px solid var(--grey-light); padding-top: 15px; max-height: 200px; overflow-y: auto;}
-        #step-by-step-list { list-style: none; padding: 0; margin: 0; }
-        #step-by-step-list li {
-             padding: 8px 0; border-bottom: 1px dashed var(--grey-light); font-size: 14px; line-height: 1.4;
-             display: flex; align-items: center; gap: 10px; cursor: pointer; /* Make steps clickable */
-        }
-        #step-by-step-list li:hover { background-color: #fafafa; }
-         #step-by-step-list li:last-child { border-bottom: none; }
-         #step-by-step-list i { color: var(--text-light); width: 20px; text-align: center; }
-         #step-by-step-list .step-distance { font-size: 12px; color: var(--text-light); margin-left: auto; white-space: nowrap; }
-
-
-        /* --- Action Buttons --- */
-        .action-button {
-            display: block; width: 100%; background-color: var(--primary-green); color: white; border: none;
-            border-radius: 25px; padding: 14px 0; font-size: 16px; font-weight: 500; cursor: pointer;
-            text-align: center; box-shadow: 0 4px 10px rgba(0, 200, 83, 0.3); transition: background-color 0.2s;
-        }
-        .action-button:hover { background-color: var(--dark-green); }
-        .action-button i { margin-right: 8px; }
-        .action-button:disabled { background-color: var(--grey-medium); cursor: not-allowed; box-shadow: none; }
-        .go-button { background-color: #00bfa5; } /* Teal variant */
-        .go-button:hover { background-color: #00a188; }
-
-        /* --- Popups --- */
-         .mapboxgl-popup { max-width: 250px; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); border-radius: 6px; z-index: 30 !important; }
-         .mapboxgl-popup-content { padding: 12px 18px; border-radius: 6px; }
-         .mapboxgl-popup-content h4 { margin: 0 0 8px 0; color: var(--accent-blue); font-size: 15px; border-bottom: 1px solid var(--grey-light); padding-bottom: 5px; }
-         .mapboxgl-popup-content p { margin: 0; line-height: 1.4; color: var(--text-medium); }
-         .mapboxgl-popup-close-button { font-size: 1.2em; padding: 0px 5px; color: var(--grey-medium); }
-         .mapboxgl-popup-close-button:hover { color: var(--text-dark); background-color: transparent; }
-         .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip { border-top-color: var(--white); }
-         .popup-directions-btn { /* Style the button inside popups */
-             background-color: var(--primary-green); color: white; border: none; border-radius: 5px;
-             padding: 5px 10px; margin-top: 8px; cursor: pointer; font-size: 12px;
-         }
-         .popup-directions-btn:hover { background-color: var(--dark-green); }
-
-
-        /* --- Custom Markers --- */
-        .marker { cursor: pointer; background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .marker-poi { /* Generic POI from search/category */
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28"><path fill="%23EA4335" d="M12 2C8.13 2 5 5.13 5 9c0 4.75 5.32 9.48 6.41 10.75c.17.2.43.32.7.32s.53-.12.7-.32C13.68 18.48 19 13.75 19 9c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>');
-            width: 28px; height: 28px;
-        }
-        .marker-dolores { /* Example custom marker */
-             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="40" height="40"><defs><filter id="glow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><circle cx="12" cy="12" r="10" fill="%2300c853" filter="url(%23glow)"/><path fill="white" d="M17 10h-2v2h-2v-2h-2v2H9v-2H7v5h2v-2h2v2h2v-2h2v-3zm-4 5h-2v-2h2v2zM6 18h12v-2H6v2z"/></svg>'); /* Simple park/building icon */
-             width: 40px; height: 40px; border-radius: 50%;
-        }
-        .marker-user { /* Custom user marker */
-             background-color: var(--accent-blue); width: 18px; height: 18px; border-radius: 50%;
-             border: 3px solid white; box-shadow: 0 0 0 3px var(--accent-blue), 0 1px 5px rgba(0,0,0,0.3);
-        }
-        /* Let Mapbox handle default user location marker styling for simplicity */
-        /* .mapboxgl-user-location-dot { ... } */
-        /* .mapboxgl-user-location-accuracy-circle { ... } */
+        /* --- Utilities --- */
+        .hidden { display: none !important; }
+        #loadingIndicator { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: rgba(0, 0, 0, 0.7); color: white; padding: 15px 25px; border-radius: 8px; z-index: 100; font-size: 14px; }
 
     </style>
 </head>
 <body>
+    <div class="phone-container">
 
-    <!-- Main App Container (for mobile appearance) -->
-    <div class="mobile-frame">
-        <div class="app-container">
+        <!-- ====== Loading Indicator ====== -->
+        <div id="loadingIndicator" class="hidden">Filtering venues...</div>
 
-            <!-- Map Container -->
-            <div id="map"></div>
-
-            <!-- Search Bar & Results -->
-            <div class="search-container">
-                <div id="search-bar" class="search-bar">
-                    <i class="fas fa-search icon"></i>
-                    <input type="text" id="search-input" placeholder="Search for places...">
-                    <button id="clear-search" class="clear-button hidden">×</button>
-                     <!-- Mic icon placeholder -->
-                     <i class="fas fa-microphone icon mic-icon"></i>
-                </div>
-                 <div id="search-loading" class="hidden">
-                     <div class="loading-spinner"></div>
-                 </div>
-                <ul id="search-results"></ul>
+        <!-- ====== MAP SCREEN ====== -->
+        <div class="screen map-screen" id="mapScreen">
+            <div class="top-bar">
+                <i class="fa-solid fa-bars"></i>
+                <h1>VENUES NEAR YOU</h1>
+                <i class="fa-solid fa-sliders" id="filterIcon"></i>
             </div>
 
-             <!-- Category Filters -->
-            <div id="category-filters">
-                <button class="category-button" data-category="restaurant"><i class="fas fa-utensils"></i> Restaurants</button>
-                <button class="category-button" data-category="cafe"><i class="fas fa-coffee"></i> Coffee</button>
-                <button class="category-button" data-category="parking"><i class="fas fa-parking"></i> Parking</button>
-                <button class="category-button" data-category="gas station"><i class="fas fa-gas-pump"></i> Gas</button>
-                <button class="category-button" data-category="park"><i class="fas fa-tree"></i> Parks</button>
-                <button class="category-button" data-category="hotel"><i class="fas fa-hotel"></i> Hotels</button>
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Search disabled in demo">
             </div>
 
-
-            <!-- Locate Me Button -->
-            <button id="locate-button" class="locate-button">
-                <i class="fas fa-crosshairs"></i>
-            </button>
-
-            <!-- Bottom Navigation (Screen 1) -->
-            <div id="bottom-nav" class="bottom-nav">
-                <button class="nav-icon"><i class="fas fa-home"></i></button>
-                <button class="nav-icon"><i class="fas fa-bell"></i></button>
-                <button id="close-panel-button" class="nav-center-button"><i class="fas fa-times"></i></button>
-                <button class="nav-icon"><i class="fas fa-bookmark"></i></button>
-                <button class="nav-icon"><i class="fas fa-cog"></i></button>
-            </div>
-
-            <!-- Location Detail Panel (Screen 2) -->
-            <div id="location-panel" class="bottom-panel">
-                <div class="panel-handle"></div>
-                <div class="panel-content">
-                    <img id="location-image" src="" alt="Location Image" class="location-image hidden">
-                    <h3 id="location-name">Location Name</h3>
-                    <div id="location-address" class="text-light" style="font-size: 14px; margin-bottom: 10px;">Address</div>
-                    <div class="location-rating">
-                        <!-- Dynamic rating can go here -->
-                    </div>
-
-                    <button id="show-directions-button" class="action-button">
-                       <i class="fas fa-directions"></i> Get Directions
-                    </button>
-                    <!-- Add to favorites button placeholder -->
-                     <button id="add-favorite-button" class="action-button" style="background-color: var(--accent-blue); margin-top: 10px;">
-                         <i class="fas fa-heart"></i> Add to Favorites
-                    </button>
-                </div>
-            </div>
-
-            <!-- Directions Panel (Screen 3) -->
-            <div id="directions-panel" class="bottom-panel">
-                 <div class="panel-handle"></div>
-                 <div class="panel-content">
-                     <div class="directions-input-group">
-                         <div class="directions-input">
-                             <i class="fas fa-circle origin-icon"></i>
-                             <span id="directions-origin">Your location</span>
-                         </div>
-                          <div class="directions-input">
-                             <i class="fas fa-map-marker-alt destination-icon"></i>
-                             <span id="directions-destination">Destination</span>
-                              <!-- Swap button maybe later -->
-                         </div>
-                     </div>
-
-                     <div class="travel-modes">
-                         <button class="travel-mode active" data-profile="driving-traffic">
-                            <div class="loading-spinner hidden"></div>
-                            <div class="content">
-                                <i class="fas fa-car"></i>
-                                <span class="duration">--</span>
-                            </div>
-                         </button>
-                          <button class="travel-mode" data-profile="walking">
-                            <div class="loading-spinner hidden"></div>
-                            <div class="content">
-                                <i class="fas fa-walking"></i>
-                                <span class="duration">--</span>
-                            </div>
-                         </button>
-                          <button class="travel-mode" data-profile="cycling">
-                            <div class="loading-spinner hidden"></div>
-                            <div class="content">
-                                <i class="fas fa-bicycle"></i>
-                                <span class="duration">--</span>
-                             </div>
-                         </button>
-                     </div>
-
-                     <div id="directions-summary" style="text-align: center; margin-bottom: 15px; font-weight: 500;">
-                         Route details loading...
-                     </div>
-
-                    <!-- Step-by-step instructions -->
-                    <div id="step-by-step-container" class="hidden">
-                         <h4 style="margin: 0 0 10px 0; font-size: 16px;">Steps</h4>
-                        <ul id="step-by-step-list"></ul>
-                    </div>
-
-
-                     <button id="go-now-button" class="action-button go-button" disabled>
-                         <i class="fas fa-location-arrow"></i> Start Navigation (Sim)
+            <div id='map'>
+                 <div class="map-overlay-buttons">
+                     <button id="recenterButton" title="Recenter on me">
+                         <i class="fa-solid fa-location-crosshairs"></i>
                      </button>
                  </div>
             </div>
 
-        </div> <!-- /app-container -->
-    </div> <!-- /mobile-frame -->
+            <div class="carousel-container">
+                <div class="venue-carousel" id="venueCarousel">
+                    <!-- Venue cards will be injected here -->
+                </div>
+                 <div class="empty-state-message" id="emptyStateMessage">
+                     No venues match your current filters.
+                 </div>
+            </div>
+
+            <!-- Tab Bar -->
+            <div class="tab-bar">
+                <a href="#" class="tab-item" data-tab="settings"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+                <a href="#" class="tab-item central-tab active" data-tab="map"><div class="icon-background"><i class="fa-solid fa-map-location-dot"></i></div><span>Explore</span></a>
+                <a href="#" class="tab-item" data-tab="activity"><i class="fa-solid fa-chart-line"></i><span>Activity</span></a>
+            </div>
+        </div>
+
+        <!-- ====== FILTER SCREEN ====== -->
+        <div class="screen filter-screen" id="filterScreen">
+            <div class="filter-nav">
+                <button id="cancelFilterButton">Cancel</button>
+                <h2>SEARCH FILTER</h2>
+                <button class="apply" id="applyFilterButton">Apply</button>
+            </div>
+            <div class="filter-content">
+                <!-- Applied Filters (Placeholder - Not dynamically updated in this simple version) -->
+                 <div class="filter-section hidden">
+                     <h3>Applied filters</h3>
+                     <div class="filter-tags" id="appliedFilterTags">
+                         <!-- Tags could be added here dynamically if needed -->
+                     </div>
+                 </div>
+
+                <!-- Categories (Example: Use a single category filter for simplicity) -->
+                <div class="filter-section">
+                    <h3>Category</h3>
+                    <div class="filter-chips" id="categoryFilters">
+                        <button class="filter-chip" data-category="All">All</button> <!-- Add 'All' option -->
+                        <button class="filter-chip" data-category="Italian"><i class="fa-regular fa-circle"></i> Italian</button>
+                        <button class="filter-chip" data-category="Cafe"><i class="fa-regular fa-circle"></i> Cafe</button>
+                        <button class="filter-chip" data-category="Mexican"><i class="fa-regular fa-circle"></i> Mexican</button>
+                        <button class="filter-chip" data-category="Bakery"><i class="fa-regular fa-circle"></i> Bakery</button>
+                         <button class="filter-chip" data-category="Asian"><i class="fa-regular fa-circle"></i> Asian</button>
+                    </div>
+                </div>
+
+                <!-- Distance -->
+                <div class="filter-section">
+                    <h3>Max Distance (Simulated)</h3>
+                    <input type="range" min="1" max="50" value="50" class="distance-slider" id="distanceSlider">
+                    <div class="distance-labels">
+                        <span>1km</span>
+                        <span id="distanceValue">50km</span>
+                        <span>50km</span>
+                    </div>
+                </div>
+
+                <!-- Toggles -->
+                <div class="filter-section">
+                     <div class="toggle-item">
+                         <label for="nowOpenToggle">Now open (Toggle UI Only)</label>
+                         <label class="toggle-switch">
+                             <input type="checkbox" id="nowOpenToggle">
+                             <span class="toggle-slider"></span>
+                         </label>
+                     </div>
+                     <div class="toggle-item">
+                        <label for="freeReservationToggle">Free reservation (Toggle UI Only)</label>
+                         <label class="toggle-switch">
+                             <input type="checkbox" id="freeReservationToggle">
+                             <span class="toggle-slider"></span>
+                         </label>
+                     </div>
+                </div>
+            </div>
+        </div>
+
+         <!-- ====== DETAIL SCREEN ====== -->
+        <div class="screen detail-screen" id="detailScreen">
+             <div class="detail-nav">
+                 <button class="back-button" id="detailBackButton"><i class="fa-solid fa-chevron-left"></i> Back</button>
+                 <h2 id="detailVenueName">Venue Name</h2>
+                 <button class="placeholder">Back</button> <!-- Balance title -->
+             </div>
+             <div class="detail-content">
+                 <div class="detail-image-gallery" id="detailImageGallery">
+                     <!-- Images injected here -->
+                 </div>
+                 <div class="detail-info">
+                     <h3 id="detailInfoName">Venue Name</h3>
+                     <div class="rating" id="detailRating">
+                         <!-- Rating stars injected here -->
+                     </div>
+                     <div class="categories" id="detailCategories"><i class="fa-solid fa-tags"></i> <span>Categories...</span></div>
+                     <div class="address" id="detailAddress"><i class="fa-solid fa-location-dot"></i> <span>Address...</span></div>
+                     <div class="hours" id="detailHours"><i class="fa-regular fa-clock"></i> <span>Hours...</span></div>
+                 </div>
+
+                 <div class="detail-actions">
+                    <a id="detailDirectionsButton" href="#" target="_blank" class="directions">Directions</a>
+                    <a id="detailCallButton" href="#" class="call">Call</a>
+                    <a id="detailWebsiteButton" href="#" target="_blank" class="website">Website</a>
+                 </div>
+
+                 <div id="detailMapContainer">
+                     <div id="detailMap"></div>
+                 </div>
+
+                 <div class="detail-section detail-description">
+                    <h4>Description</h4>
+                    <p id="detailDescription">Description placeholder...</p>
+                 </div>
+
+                  <div class="detail-section detail-reviews">
+                    <h4>Reviews</h4>
+                    <p>Reviews section placeholder. Real apps would list user reviews here.</p>
+                 </div>
+
+             </div>
+         </div>
+
+    </div> <!-- End Phone Container -->
 
     <!-- Mapbox GL JS -->
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js"></script>
-    <!-- Turf.js (for distance calculation etc. - optional but useful) -->
-    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
 
-    <!-- Custom JS -->
     <script>
-        // --- Configuration & Globals ---
-        mapboxgl.accessToken = 'pk.eyJ1Ijoib3BlbnN0cmVldGNhbSIsImEiOiJja252Ymh4ZnIwNHdkMnd0ZzF5NDVmdnR5In0.dYxz3TzZPTPzd_ibMeGK2g'; // <-- TOKEN INSERTED HERE
+        // --- Configuration & State ---
+        mapboxgl.accessToken = 'pk.eyJ1Ijoib3BlbnN0cmVldGNhbSIsImEiOiJja252Ymh4ZnIwNHdkMnd0ZzF5NDVmdnR5In0.dYxz3TzZPTPzd_ibMeGK2g'; // Public token
 
-        const mapContainer = document.getElementById('map');
-        const searchInput = document.getElementById('search-input');
-        const searchResultsList = document.getElementById('search-results');
-        const searchLoading = document.getElementById('search-loading');
-        const clearSearchButton = document.getElementById('clear-search');
-        const categoryFiltersContainer = document.getElementById('category-filters');
-        const locateButton = document.getElementById('locate-button');
-        const bottomNav = document.getElementById('bottom-nav');
-        const locationPanel = document.getElementById('location-panel');
-        const directionsPanel = document.getElementById('directions-panel');
-        const showDirectionsButton = document.getElementById('show-directions-button');
-        const goNowButton = document.getElementById('go-now-button');
-        const closePanelButton = document.getElementById('close-panel-button');
-        const travelModeButtons = document.querySelectorAll('.travel-mode');
-        const stepByStepContainer = document.getElementById('step-by-step-container');
-        const stepByStepList = document.getElementById('step-by-step-list');
-        const directionsSummary = document.getElementById('directions-summary');
+        const initialCenter = [-118.2673, 34.0440]; // Los Angeles approx center [lng, lat]
+        const initialZoom = 13;
 
-        let map;
-        let userLocation = null; // Store user's [lng, lat]
-        let currentDestination = null; // Store destination { feature object }
-        let searchMarkers = []; // Store markers from search/category results
-        let geolocateControl;
-        let searchTimeout; // For debouncing search input
-        const DEBOUNCE_DELAY = 350; // ms
-        let currentRoute = null; // Store the current route GeoJSON feature
-        let activePanel = null; // Track which panel is open ('location', 'directions', null)
+        let map; // Main map instance
+        let detailMap; // Detail screen map instance
+        let currentMarkers = []; // Store mapbox marker instances
+        let currentFilters = { // Store the currently applied filters
+            category: 'All',
+            maxDistance: 50, // Simulated max distance in km
+            // isOpenNow: false // Add later if implementing time logic
+        };
+        let lastUserLocation = null; // To store user's coords
+
+        // --- Mock Venue Data (Expanded) ---
+        const allVenues = [
+            { id: 'v1', name: "The Palm Los Angeles", coordinates: [-118.2676, 34.0452], distance: 0.2, rating: 4.5, reviewCount: 12, categories: ["Italian", "Steakhouse"], imageUrls: ["https://via.placeholder.com/375x250/A0A0A0/FFFFFF?text=Palm+1", "https://via.placeholder.com/375x250/C0C0C0/FFFFFF?text=Palm+2"], address: "1100 S Flower St, Los Angeles, CA 90015", phone: "+12137634600", website: "https://www.thepalm.com/", openingHours: "Mon-Sat 11:30 AM - 10 PM", description: "Classic American steakhouse known for caricatures on the walls." },
+            { id: 'v2', name: "Bottega Louie", coordinates: [-118.2568, 34.0468], distance: 1.2, rating: 4.7, reviewCount: 55, categories: ["Italian", "Bakery", "Cafe"], imageUrls: ["https://via.placeholder.com/375x250/B0B0B0/FFFFFF?text=Louie+1"], address: "700 S Grand Ave, Los Angeles, CA 90017", phone: "+12138021470", website: "https://www.bottegalouie.com/", openingHours: "Daily 9 AM - 9 PM", description: "Popular spot for macarons, pizza, and brunch in a grand setting."},
+            { id: 'v3', name: "Guisados DTLA", coordinates: [-118.2488, 34.0480], distance: 1.8, rating: 4.6, reviewCount: 40, categories: ["Mexican"], imageUrls: ["https://via.placeholder.com/375x250/D0D0D0/FFFFFF?text=Guisados+1"], address: "541 S Spring St #101, Los Angeles, CA 90013", phone: "+12136277656", website: "https://www.guisados.co/", openingHours: "Daily 10 AM - 8 PM", description: "Homestyle braised meat tacos on fresh handmade tortillas." },
+            { id: 'v4', name: "Verve Coffee Roasters", coordinates: [-118.2585, 34.0475], distance: 1.0, rating: 4.4, reviewCount: 25, categories: ["Cafe", "Bakery"], imageUrls: ["https://via.placeholder.com/375x250/E0E0E0/FFFFFF?text=Verve+1"], address: "833 S Spring St, Los Angeles, CA 90014", phone: "+12134555971", website: "https://www.vervecoffee.com/", openingHours: "Daily 7 AM - 6 PM", description: "Artisanal coffee shop with a focus on quality beans and brewing methods." },
+            { id: 'v5', name: "Marugame Monzo", coordinates: [-118.2476, 34.0490], distance: 2.0, rating: 4.8, reviewCount: 60, categories: ["Asian", "Japanese"], imageUrls: ["https://via.placeholder.com/375x250/F0F0F0/FFFFFF?text=Monzo+1"], address: "329 E 1st St, Los Angeles, CA 90012", phone: "+12133469762", website: "https://marugamemonzola.com/", openingHours: "Tue-Sun 11:30 AM - 10 PM", description: "Famous for handmade udon noodles served hot or cold." }
+        ];
+
+
+        // --- DOM Elements ---
+        const mapElement = document.getElementById('map');
+        const detailMapElement = document.getElementById('detailMap');
+        const mapScreen = document.getElementById('mapScreen');
+        const filterScreen = document.getElementById('filterScreen');
+        const detailScreen = document.getElementById('detailScreen');
+        const filterIcon = document.getElementById('filterIcon');
+        const cancelFilterButton = document.getElementById('cancelFilterButton');
+        const applyFilterButton = document.getElementById('applyFilterButton');
+        const detailBackButton = document.getElementById('detailBackButton');
+        const venueCarousel = document.getElementById('venueCarousel');
+        const categoryFilterChips = document.querySelectorAll('#categoryFilters .filter-chip');
+        const distanceSlider = document.getElementById('distanceSlider');
+        const distanceValueDisplay = document.getElementById('distanceValue');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const emptyStateMessage = document.getElementById('emptyStateMessage');
+        const recenterButton = document.getElementById('recenterButton');
 
         // --- Map Initialization ---
-        function initializeMap() {
-            if (!mapboxgl.accessToken || mapboxgl.accessToken.startsWith('YOUR_MAPBOX')) {
-                 alert("Error: Invalid Mapbox token found. Please check the code.");
-                 return;
-            }
-            if (map) return; // Already initialized
-
+        function initializeMainMap() {
             map = new mapboxgl.Map({
-                container: 'map',
-                style: 'mapbox://styles/mapbox/standard', // Standard style preferred for features
-                center: [-98.5795, 39.8283], // Center of US
-                zoom: 3.5,
-                pitch: 45,
-                antialias: true
+                container: mapElement,
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: initialCenter,
+                zoom: initialZoom,
+                pitch: 10
             });
 
             map.on('load', () => {
-                console.log('Map loaded.');
-                setupMapFeatures();
-                setupUIEventListeners();
-                loadSavedPlaces(); // Load favorites from localStorage
-
-                // Attempt to get initial user location - wait a bit for map to settle
-                setTimeout(() => {
-                     if (geolocateControl) geolocateControl.trigger();
-                 }, 1000);
+                console.log('Main map loaded');
+                 // Initially render all venues
+                applyFiltersAndRender();
             });
-
              map.on('error', (e) => {
-                console.error('Mapbox Map Error:', e.error?.message || e);
-                alert(`Map Error: ${e.error?.message || 'Unknown error'}`);
-            });
-
-             map.on('click', handleMapClick);
+                console.error('Mapbox error:', e);
+                mapElement.innerHTML = '<p style="padding: 20px; text-align: center; color: red;">Error loading map. Please check your Mapbox token and network connection.</p>';
+             });
         }
 
-        // --- Setup Map Related Features ---
-        function setupMapFeatures() {
-             geolocateControl = new mapboxgl.GeolocateControl({
-                 positionOptions: { enableHighAccuracy: true },
-                 trackUserLocation: true,
-                 showUserHeading: true,
-                 fitBoundsOptions: { maxZoom: 15 }
+        function initializeDetailMap(venue) {
+             if (detailMap) {
+                 detailMap.remove(); // Remove previous instance if exists
+                 detailMap = null;
+             }
+            // Ensure container is visible and sized before initializing
+             requestAnimationFrame(() => { // Wait for next frame render
+                 if (detailMapElement.offsetWidth > 0 && detailMapElement.offsetHeight > 0) {
+                     try {
+                         detailMap = new mapboxgl.Map({
+                             container: detailMapElement,
+                             style: 'mapbox://styles/mapbox/streets-v12',
+                             center: venue.coordinates,
+                             zoom: 15,
+                             interactive: false // Make it non-interactive
+                         });
+
+                         detailMap.on('load', () => {
+                             // Add marker for the venue
+                             new mapboxgl.Marker({ color: '#ff9500' }) // Orange marker
+                                 .setLngLat(venue.coordinates)
+                                 .addTo(detailMap);
+                             console.log('Detail map loaded for:', venue.name);
+                         });
+                         detailMap.on('error', (e) => console.error('Detail Mapbox error:', e));
+                     } catch (error) {
+                          console.error("Error initializing detail map:", error);
+                          detailMapElement.innerHTML = '<p style="padding:10px; text-align:center; color: red;">Could not load map.</p>';
+                     }
+                 } else {
+                     console.warn("Detail map container not ready, delaying init slightly.");
+                     setTimeout(() => initializeDetailMap(venue), 100); // Retry shortly
+                 }
              });
-             map.addControl(geolocateControl, 'top-right');
+         }
 
-            geolocateControl.on('geolocate', (e) => {
-                const newLocation = [e.coords.longitude, e.coords.latitude];
-                // Update only if location changed significantly (optional)
-                // if (!userLocation || turf.distance(userLocation, newLocation, {units: 'meters'}) > 10) {
-                    userLocation = newLocation;
-                    console.log('User located:', userLocation);
-                    if (activePanel === 'directions' && currentDestination) {
-                        fetchDirections(userLocation, currentDestination.geometry.coordinates, getActiveTravelProfile());
-                    }
-                // }
+        // --- Rendering Functions ---
+        function renderMapMarkers(venuesToShow) {
+            // Clear existing markers
+            currentMarkers.forEach(marker => marker.remove());
+            currentMarkers = [];
+
+            venuesToShow.forEach(venue => {
+                 // Create a custom marker element
+                const el = document.createElement('div');
+                el.className = 'custom-marker';
+                el.innerHTML = '<i class="fa-solid fa-shop"></i>'; // Example icon
+                el.dataset.venueId = venue.id; // Store ID for click handling
+
+                const marker = new mapboxgl.Marker(el)
+                    .setLngLat(venue.coordinates)
+                    .addTo(map);
+
+                // Add click listener TO THE ELEMENT
+                el.addEventListener('click', () => {
+                    showDetailScreen(venue.id);
+                });
+
+                currentMarkers.push(marker);
             });
-             geolocateControl.on('error', (e) => console.error("Geolocation error:", e.message));
-
-             map.addControl(new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
-             map.addControl(new mapboxgl.ScaleControl());
-
-             // Enable 3D Terrain & Buildings via Standard Style config
-             map.setConfigProperty('basemap', 'lightPreset', 'day');
-             map.setConfigProperty('basemap', 'showTerrain', true);
-             map.setConfigProperty('basemap', 'show3dBuildings', true);
+             console.log(`Rendered ${venuesToShow.length} markers.`);
         }
 
-        // --- UI Event Listeners Setup ---
-        function setupUIEventListeners() {
-            searchInput.addEventListener('input', () => {
-                clearTimeout(searchTimeout);
-                const query = searchInput.value.trim();
-                 searchResultsList.innerHTML = '';
-                 searchResultsList.classList.remove('hidden');
-                 searchLoading.classList.remove('hidden');
+        function renderVenueCarousel(venuesToShow) {
+            venueCarousel.innerHTML = ''; // Clear existing cards
 
-                if (query) {
-                    clearSearchButton.classList.remove('hidden');
-                    searchTimeout = setTimeout(() => fetchAutocompleteResults(query), DEBOUNCE_DELAY);
-                } else {
-                    clearSearchButton.classList.add('hidden');
-                     searchResultsList.classList.add('hidden');
-                     searchLoading.classList.add('hidden');
-                    clearSearchMarkers();
-                }
+            if (venuesToShow.length === 0) {
+                emptyStateMessage.style.display = 'block';
+                return; // Stop if no venues
+            } else {
+                 emptyStateMessage.style.display = 'none';
+            }
+
+            venuesToShow.forEach(venue => {
+                const ratingStars = Array(5).fill(0).map((_, i) => {
+                    if (i < Math.floor(venue.rating)) return '<i class="fa-solid fa-star"></i>';
+                    if (i < venue.rating) return '<i class="fa-solid fa-star-half-stroke"></i>';
+                    return '<i class="fa-regular fa-star"></i>';
+                }).join('');
+
+                const cardHTML = `
+                    <div class="venue-card" data-venue-id="${venue.id}">
+                        <img src="${venue.imageUrls[0]}" alt="${venue.name}" loading="lazy">
+                        <div class="info">
+                            <h4>${venue.name}</h4>
+                            <span class="distance"><i class="fa-solid fa-location-arrow"></i>${venue.distance}km (Mock)</span>
+                            <div class="rating">${ratingStars}<span>${venue.reviewCount} reviews</span></div>
+                            <span class="categories">${venue.categories.join(' · ')}</span>
+                        </div>
+                    </div>
+                `;
+                venueCarousel.insertAdjacentHTML('beforeend', cardHTML);
             });
 
-            clearSearchButton.addEventListener('click', clearSearch);
-
-            categoryFiltersContainer.addEventListener('click', (e) => {
-                 if (e.target.classList.contains('category-button')) {
-                    const category = e.target.dataset.category;
-                    document.querySelectorAll('.category-button').forEach(btn => btn.classList.remove('active'));
-                    e.target.classList.add('active');
-                    searchByCategory(category);
-                }
-            });
-
-             locateButton.addEventListener('click', () => {
-                if (geolocateControl) geolocateControl.trigger();
-             });
-
-             closePanelButton.addEventListener('click', closeAllPanels);
-             showDirectionsButton.addEventListener('click', openDirectionsPanel);
-
-             travelModeButtons.forEach(button => {
-                button.addEventListener('click', (e) => {
-                    if (currentDestination && userLocation) {
-                         travelModeButtons.forEach(btn => btn.classList.remove('active'));
-                         const clickedButton = e.currentTarget;
-                         clickedButton.classList.add('active');
-                         fetchDirections(userLocation, currentDestination.geometry.coordinates, clickedButton.dataset.profile);
-                    }
+            // Add click listeners AFTER appending cards
+            venueCarousel.querySelectorAll('.venue-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    showDetailScreen(card.dataset.venueId);
                 });
             });
-
-            // Favorite button listener is set dynamically in updateLocationPanel
+             console.log(`Rendered ${venuesToShow.length} cards.`);
         }
 
-        // --- Search & Geocoding Functions ---
+        // --- Filtering Logic ---
+        function applyFiltersAndRender() {
+            showLoading(true);
 
-        function fetchAutocompleteResults(query) {
-            searchLoading.classList.remove('hidden');
-            const proximity = userLocation ? userLocation.join(',') : '';
-            const url = `https://api.mapbox.com/search/searchbox/v1/suggest?q=${encodeURIComponent(query)}&language=en&limit=5&session_token=${generateSessionToken()}&access_token=${mapboxgl.accessToken}` + (proximity ? `&proximity=${proximity}` : '');
+             // Simulate async filtering delay
+            setTimeout(() => {
+                 console.log("Applying filters:", currentFilters);
+                let filteredVenues = [...allVenues];
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => { displaySearchResults(data.suggestions || []); })
-                .catch(error => {
-                    console.error('Autocomplete Error:', error);
-                    searchResultsList.innerHTML = '<li>Error fetching results.</li>';
-                })
-                 .finally(() => searchLoading.classList.add('hidden'));
+                // 1. Filter by Category
+                if (currentFilters.category && currentFilters.category !== 'All') {
+                    filteredVenues = filteredVenues.filter(venue =>
+                        venue.categories.includes(currentFilters.category)
+                    );
+                }
+
+                 // 2. Filter by Distance (SIMULATED)
+                 // In a real app, calculate distance from user/center to each venue
+                 // using Haversine formula and compare with currentFilters.maxDistance
+                 // This example just filters based on the mock 'distance' property for simplicity.
+                filteredVenues = filteredVenues.filter(venue =>
+                     venue.distance <= currentFilters.maxDistance
+                 );
+
+
+                // 3. Filter by "Now Open" (Omitted for complexity)
+                // if (currentFilters.isOpenNow) { ... }
+
+                 console.log(`Filtering complete, ${filteredVenues.length} venues matched.`);
+                renderMapMarkers(filteredVenues);
+                renderVenueCarousel(filteredVenues);
+                showLoading(false);
+            }, 300); // Simulate network/processing time
         }
 
-        function displaySearchResults(results) {
-            searchResultsList.innerHTML = '';
-            if (results.length === 0) {
-                searchResultsList.innerHTML = '<li>No results found.</li>';
+        // --- Screen Navigation & Interaction ---
+        function showFilterScreen() { filterScreen.classList.add('visible'); updateFilterUI(); }
+        function hideFilterScreen() { filterScreen.classList.remove('visible'); }
+        function showDetailScreen(venueId) {
+            const venue = allVenues.find(v => v.id === venueId);
+            if (!venue) {
+                console.error("Venue not found for ID:", venueId);
                 return;
             }
-            results.forEach(result => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    ${result.name}
-                    <small>${result.full_address || result.place_formatted || 'Details unavailable'}</small>
-                `;
-                li.dataset.suggestionId = result.mapbox_id;
-                li.addEventListener('click', () => retrieveAndSelectSuggestion(result.mapbox_id));
-                searchResultsList.appendChild(li);
+            populateDetailScreen(venue);
+            detailScreen.classList.add('visible');
+            // Initialize map *after* screen is potentially visible
+            initializeDetailMap(venue);
+        }
+        function hideDetailScreen() {
+             detailScreen.classList.remove('visible');
+             if (detailMap) {
+                detailMap.remove(); // Clean up map instance
+                detailMap = null;
+                console.log('Detail map removed.');
+             }
+        }
+
+        function populateDetailScreen(venue) {
+            // Basic Info
+            document.getElementById('detailVenueName').textContent = venue.name;
+            document.getElementById('detailInfoName').textContent = venue.name;
+            document.getElementById('detailAddress').querySelector('span').textContent = venue.address;
+            document.getElementById('detailHours').querySelector('span').textContent = venue.openingHours;
+            document.getElementById('detailCategories').querySelector('span').textContent = venue.categories.join(', ');
+             document.getElementById('detailDescription').textContent = venue.description || "No description available.";
+
+
+            // Rating
+            const ratingStars = Array(5).fill(0).map((_, i) => {
+                    if (i < Math.floor(venue.rating)) return '<i class="fa-solid fa-star"></i>';
+                    if (i < venue.rating) return '<i class="fa-solid fa-star-half-stroke"></i>';
+                    return '<i class="fa-regular fa-star"></i>';
+                }).join('');
+             document.getElementById('detailRating').innerHTML = `${ratingStars} <span style="font-size: 13px; color: #666; margin-left: 5px;">(${venue.reviewCount} reviews)</span>`;
+
+
+            // Image Gallery
+            const gallery = document.getElementById('detailImageGallery');
+            gallery.innerHTML = ''; // Clear previous
+            venue.imageUrls.forEach(url => {
+                gallery.innerHTML += `<img src="${url}" alt="${venue.name}" loading="lazy">`;
             });
-            searchResultsList.classList.remove('hidden');
+
+            // Action Buttons
+            const encodedAddress = encodeURIComponent(venue.address);
+             document.getElementById('detailDirectionsButton').href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+             document.getElementById('detailCallButton').href = venue.phone ? `tel:${venue.phone}` : '#';
+             document.getElementById('detailCallButton').style.opacity = venue.phone ? 1 : 0.5;
+             document.getElementById('detailWebsiteButton').href = venue.website || '#';
+             document.getElementById('detailWebsiteButton').style.opacity = venue.website ? 1 : 0.5;
+             document.getElementById('detailWebsiteButton').target = venue.website ? '_blank' : '_self';
+
+         }
+
+        function showLoading(isLoading) {
+            loadingIndicator.classList.toggle('hidden', !isLoading);
         }
 
-        function retrieveAndSelectSuggestion(mapboxId) {
-            const url = `https://api.mapbox.com/search/searchbox/v1/retrieve/${mapboxId}?session_token=${generateSessionToken()}&access_token=${mapboxgl.accessToken}`;
-             searchLoading.classList.remove('hidden');
-             searchResultsList.classList.add('hidden');
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.features && data.features.length > 0) {
-                        selectSearchResult(data.features[0]);
-                    } else { throw new Error("Could not retrieve details"); }
-                })
-                .catch(error => {
-                    console.error('Retrieve Suggestion Error:', error);
-                     alert("Error getting location details.");
-                })
-                 .finally(() => searchLoading.classList.add('hidden'));
-        }
-
-        function selectSearchResult(feature) {
-            currentDestination = feature;
-            console.log("Selected:", feature);
-            searchInput.value = feature.place_name || feature.properties?.name || '';
-            searchResultsList.innerHTML = '';
-            searchResultsList.classList.add('hidden');
-            clearSearchButton.classList.remove('hidden');
-            clearSearchMarkers();
-
-            const coords = feature.geometry.coordinates;
-            searchMarkers.push(addMarker(coords, feature.place_name, 'marker-poi'));
-
-            map.flyTo({ center: coords, zoom: 15, essential: true });
-            updateLocationPanel(feature);
-            openPanel('location');
-        }
-
-        function searchByCategory(category) {
-             if (!userLocation) { alert("Please enable location services."); return; }
-            clearSearchMarkers();
-             closeAllPanels();
-             searchResultsList.innerHTML = '<div class="loading-spinner"></div>';
-             searchResultsList.classList.remove('hidden');
-             searchLoading.classList.add('hidden');
-
-            const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(category)}.json?proximity=${userLocation.join(',')}&limit=10&types=poi&access_token=${mapboxgl.accessToken}`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    searchResultsList.innerHTML = '';
-                     searchResultsList.classList.add('hidden');
-                    if (data.features && data.features.length > 0) {
-                        const bounds = new mapboxgl.LngLatBounds();
-                        data.features.forEach(feature => {
-                            const coords = feature.geometry.coordinates;
-                            const marker = addMarker(coords, feature.text, 'marker-poi');
-                             marker.setPopup(new mapboxgl.Popup({ offset: 25, closeButton: false })
-                                 .setHTML(`<h4>${feature.text}</h4><p>${feature.place_name.split(',').slice(1).join(',') || ''}</p><button class="popup-directions-btn" data-feature='${JSON.stringify(feature)}'>Directions</button>`)
-                             );
-                             marker.getPopup().on('open', () => {
-                                const popupEl = marker.getPopup().getElement();
-                                popupEl.querySelector('.popup-directions-btn').onclick = (e) => {
-                                     currentDestination = JSON.parse(e.target.dataset.feature);
-                                     openDirectionsPanel();
-                                     marker.getPopup().remove();
-                                 };
-                             });
-                            searchMarkers.push(marker);
-                            bounds.extend(coords);
-                        });
-                        bounds.extend(userLocation);
-                        map.fitBounds(bounds, { padding: 100, maxZoom: 15 });
-                    } else { alert(`No results found for "${category}" nearby.`); }
-                })
-                .catch(error => {
-                    console.error('Category Search Error:', error);
-                    alert(`Error searching for ${category}.`);
-                     searchResultsList.innerHTML = '';
-                     searchResultsList.classList.add('hidden');
-                });
-        }
-
-        function handleMapClick(e) {
-            const coords = e.lngLat;
-            const point = e.point;
-
-            // Prioritize route clicks
-            const routeFeatures = map.queryRenderedFeatures(point, { layers: ['route', 'route-casing'] });
-            if (routeFeatures.length > 0) { console.log("Clicked route!"); return; }
-
-            // Check for POI labels (adjust layer name based on style)
-            const poiFeatures = map.queryRenderedFeatures(point, { layers: ['poi-label', 'airport-label' /* Add more as needed */ ] });
-             if (poiFeatures.length > 0) {
-                 const poiFeature = poiFeatures[0];
-                 console.log("Clicked on POI label:", poiFeature);
-                 // Use reverse geocoding at the POI's coordinates for potentially more details
-                 fetchReverseGeocode(poiFeature.geometry.coordinates, poiFeature.properties.name);
-                 return;
-             }
-
-            // Otherwise, reverse geocode
-            fetchReverseGeocode(coords.toArray());
-        }
-
-        function fetchReverseGeocode(coords, nameHint = null) {
-            const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${coords[0]},${coords[1]}.json?types=address,poi&limit=1&access_token=${mapboxgl.accessToken}`;
-             const tempMarker = addMarker(coords, '', 'marker-poi'); // Temporary marker
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.features && data.features.length > 0) {
-                        const feature = data.features[0];
-                        const popup = new mapboxgl.Popup({ closeOnClick: true, offset: 25 })
-                            .setLngLat(coords)
-                            .setHTML(`<h4>${nameHint || feature.text || 'Selected Location'}</h4>
-                                      <p>${feature.place_name?.split(',').slice(1).join(',') || ''}</p>
-                                      <button class="popup-directions-btn" data-feature='${JSON.stringify(feature)}'>Directions Here</button>`)
-                            .addTo(map);
-                        popup.on('open', () => {
-                            popup.getElement().querySelector('.popup-directions-btn').onclick = (e) => {
-                                currentDestination = JSON.parse(e.target.dataset.feature);
-                                openDirectionsPanel();
-                                popup.remove();
-                            };
-                        });
-                         popup.on('close', () => tempMarker.remove());
-                    } else {
-                         tempMarker.remove();
-                         alert("Could not find address information.");
-                    }
-                })
-                .catch(error => {
-                     tempMarker.remove();
-                    console.error('Reverse Geocoding Error:', error);
-                });
-        }
-
-
-        function clearSearch() {
-            searchInput.value = '';
-            searchResultsList.innerHTML = '';
-            searchResultsList.classList.add('hidden');
-            clearSearchButton.classList.add('hidden');
-            clearSearchMarkers();
-            document.querySelectorAll('.category-button').forEach(btn => btn.classList.remove('active'));
-             // Don't automatically close panels or clear destination when just clearing search text
-        }
-
-        function clearSearchMarkers() {
-            searchMarkers.forEach(marker => marker.remove());
-            searchMarkers = [];
-        }
-
-        // Session token for Search Box API billing
-        function generateSessionToken() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                // Use let instead of var (Fix for potential syntax error)
-                let r = Math.random() * 16 | 0;
-                let v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-
-
-        // --- Panel Management ---
-        function openPanel(panelName) {
-            let panelElement;
-            if (panelName === 'location') panelElement = locationPanel;
-            else if (panelName === 'directions') panelElement = directionsPanel;
-            else return;
-
-            // Close others silently
-            if (panelName !== 'location') locationPanel.classList.remove('visible');
-            if (panelName !== 'directions') directionsPanel.classList.remove('visible');
-
-            panelElement.classList.add('visible');
-            bottomNav.classList.add('hidden');
-            activePanel = panelName;
-
-            // Update locate button position after panel transition starts
-            setTimeout(() => {
-                const panelHeight = panelElement.offsetHeight || 400; // Use offsetHeight after visible
-                locateButton.style.bottom = `${panelHeight + 20}px`;
-            }, 50); // Small delay
-        }
-
-        function closeAllPanels(silent = false) {
-            locationPanel.classList.remove('visible');
-            directionsPanel.classList.remove('visible');
-            bottomNav.classList.remove('hidden');
-            activePanel = null;
-             locateButton.style.bottom = '100px'; // Reset position
-
-             if (!silent) {
-                 removeRoute();
-                 clearSearchMarkers();
-                 currentDestination = null;
-                 searchInput.value = '';
-                 clearSearchButton.classList.add('hidden');
-                 document.querySelectorAll('.category-button').forEach(btn => btn.classList.remove('active'));
-             }
-        }
-
-
-        // --- Location Panel ---
-        function updateLocationPanel(feature) {
-            const props = feature.properties || {};
-            const name = feature.text || props.name || 'Selected Location';
-            const address = props.address || feature.place_name?.split(',').slice(1).filter(s => s.trim()).join(', ') || 'Address details unavailable';
-
-            document.getElementById('location-name').textContent = name;
-            document.getElementById('location-address').textContent = address;
-            document.getElementById('location-image').classList.add('hidden');
-             document.querySelector('.location-rating').innerHTML = ''; // Clear rating/status placeholders
-
-             const favButton = document.getElementById('add-favorite-button');
-             const placeId = feature.id || props.mapbox_id;
-             if (placeId && favoritePlaces[placeId]) {
-                favButton.innerHTML = '<i class="fas fa-heart-broken"></i> Remove Favorite';
-                favButton.onclick = () => removeFavoritePlace(placeId);
-             } else {
-                 favButton.innerHTML = '<i class="fas fa-heart"></i> Add to Favorites';
-                 favButton.onclick = () => saveFavoritePlace(feature);
-             }
-        }
-
-        // --- Directions Panel & Routing ---
-        function openDirectionsPanel() {
-             if (!currentDestination) { alert("Please select a destination first."); return; }
-             if (!userLocation) { alert("Waiting for your location..."); geolocateControl?.trigger(); return; }
-
-            const destName = currentDestination.text || currentDestination.place_name?.split(',')[0] || 'Destination';
-            document.getElementById('directions-destination').textContent = destName;
-            document.getElementById('directions-origin').textContent = 'Your location';
-            stepByStepContainer.classList.add('hidden');
-            stepByStepList.innerHTML = '';
-            directionsSummary.textContent = 'Calculating route...';
-
-            openPanel('directions');
-             const activeModeButton = document.querySelector('.travel-mode.active');
-             const initialProfile = activeModeButton ? activeModeButton.dataset.profile : 'driving-traffic';
-             fetchDirections(userLocation, currentDestination.geometry.coordinates, initialProfile);
-        }
-
-        function fetchDirections(origin, destination, profile = 'driving-traffic') {
-            removeRoute();
-            goNowButton.disabled = true;
-            stepByStepContainer.classList.add('hidden');
-            stepByStepList.innerHTML = '';
-            directionsSummary.textContent = `Calculating ${profile.split('-')[0]} route...`;
-
-            const modeButtons = document.querySelectorAll('.travel-mode');
-             modeButtons.forEach(btn => {
-                const content = btn.querySelector('.content');
-                const spinner = btn.querySelector('.loading-spinner');
-                content.classList.add('loading');
-                 spinner.classList.add('hidden');
-                 btn.querySelector('.duration').textContent = '--';
+         function updateFilterUI() {
+             // Update category chips
+             categoryFilterChips.forEach(chip => {
+                 const category = chip.dataset.category;
+                 const isSelected = category === currentFilters.category;
+                 chip.classList.toggle('selected', isSelected);
+                 const icon = chip.querySelector('i');
+                 if (icon) { // Check if icon exists (like for 'All')
+                     icon.className = isSelected ? 'fa-solid fa-check' : 'fa-regular fa-circle';
+                 }
              });
-             const activeButton = document.querySelector(`.travel-mode[data-profile="${profile}"]`);
-             if(activeButton) {
-                 activeButton.querySelector('.content').classList.add('loading');
-                 activeButton.querySelector('.loading-spinner').classList.remove('hidden');
-             }
 
-            const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${origin.join(',')};${destination.join(',')}?alternatives=true&geometries=geojson&overview=full&steps=true&access_token=${mapboxgl.accessToken}`;
+             // Update distance slider
+             distanceSlider.value = currentFilters.maxDistance;
+             distanceValueDisplay.textContent = `${currentFilters.maxDistance}km`;
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                     if (data.routes && data.routes.length > 0) {
-                         currentRoute = data.routes[0];
-                         console.log("Directions:", currentRoute);
-                         drawRoute(currentRoute.geometry);
-                         displayRouteInfo(currentRoute);
-                         displayStepByStep(currentRoute.legs[0].steps);
-                         goNowButton.disabled = false;
-                         const bounds = getBoundsFromRoute(currentRoute.geometry.coordinates);
-                         const panelHeight = directionsPanel.offsetHeight || 450;
-                         map.fitBounds(bounds, { padding: { top: 120, bottom: panelHeight + 40 , left: 40, right: 40 }, maxZoom: 17, duration: 1000 });
-                         updateTravelModeDurations(data.routes);
-                     } else { throw new Error(data.message || "No routes found."); }
-                })
-                .catch(error => {
-                    console.error('Directions API Error:', error);
-                     directionsSummary.textContent = `Could not find route: ${error.message}`;
-                     alert(`Error fetching directions: ${error.message}`);
-                })
-                 .finally(() => {
-                      modeButtons.forEach(btn => {
-                         btn.querySelector('.content').classList.remove('loading');
-                         btn.querySelector('.loading-spinner').classList.add('hidden');
-                     });
+             // Update toggles (add logic if implementing features)
+             // document.getElementById('nowOpenToggle').checked = currentFilters.isOpenNow;
+         }
+
+
+        // --- Event Listeners ---
+        filterIcon.addEventListener('click', showFilterScreen);
+        cancelFilterButton.addEventListener('click', hideFilterScreen);
+        detailBackButton.addEventListener('click', hideDetailScreen);
+
+        applyFilterButton.addEventListener('click', () => {
+            // Update state from UI before applying
+             const selectedCategoryChip = document.querySelector('#categoryFilters .filter-chip.selected');
+             currentFilters.category = selectedCategoryChip ? selectedCategoryChip.dataset.category : 'All';
+             currentFilters.maxDistance = parseInt(distanceSlider.value, 10);
+             // currentFilters.isOpenNow = document.getElementById('nowOpenToggle').checked;
+
+            applyFiltersAndRender();
+            hideFilterScreen();
+        });
+
+        // Filter Chip Interaction
+        categoryFilterChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                 // Visually toggle selection immediately for responsiveness
+                 categoryFilterChips.forEach(c => c.classList.remove('selected'));
+                 chip.classList.add('selected');
+                  // Update icon
+                 categoryFilterChips.forEach(c => {
+                     const icon = c.querySelector('i');
+                      if (icon) icon.className = 'fa-regular fa-circle';
                  });
-        }
+                 const selectedIcon = chip.querySelector('i');
+                  if (selectedIcon) selectedIcon.className = 'fa-solid fa-check';
+                  else if(chip.dataset.category === 'All') {} // 'All' has no icon here
 
-         function updateTravelModeDurations(routes) {
-             document.querySelectorAll('.travel-mode').forEach(button => {
-                const btnProfile = button.dataset.profile;
-                let durationText = '--';
-                 // Find a route that roughly matches the profile (driving-traffic matches driving etc.)
-                 let routeForButton = routes.find(r => r.weight_name === btnProfile.split('-')[0]) || routes[0]; // Fallback to primary
-                 if (routeForButton) { durationText = formatDuration(routeForButton.duration); }
-                 button.querySelector('.duration').textContent = durationText;
+                 // NOTE: Actual filter state update happens on "Apply" button click
             });
-         }
+        });
 
-        function drawRoute(geometry) {
-            removeRoute();
-            map.addSource('route', { type: 'geojson', data: geometry });
-             map.addLayer({
-                 id: 'route-casing', type: 'line', source: 'route',
-                 layout: { 'line-join': 'round', 'line-cap': 'round' },
-                 paint: { 'line-color': '#ffffff', 'line-width': 10, 'line-opacity': 0.4 }
-             }, 'road-label');
-            map.addLayer({
-                id: 'route', type: 'line', source: 'route',
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: { 'line-color': var(--primary-green), 'line-width': 6, 'line-opacity': 0.9 }
-            }, 'road-label');
+        // Distance Slider Interaction
+        distanceSlider.addEventListener('input', (e) => {
+            distanceValueDisplay.textContent = `${e.target.value}km`;
+             // NOTE: Actual filter state update happens on "Apply" button click
+        });
 
-             // Add hover/click listeners (simplified)
-             map.on('mouseenter', 'route', () => map.getCanvas().style.cursor = 'pointer');
-             map.on('mouseleave', 'route', () => map.getCanvas().style.cursor = '');
-        }
+        // Recenter Button
+         recenterButton.addEventListener('click', () => {
+             if (navigator.geolocation) {
+                 showLoading(true);
+                 navigator.geolocation.getCurrentPosition(
+                     (position) => {
+                         lastUserLocation = [position.coords.longitude, position.coords.latitude];
+                         map.flyTo({
+                             center: lastUserLocation,
+                             zoom: 14 // Zoom in a bit when recentering
+                         });
+                         showLoading(false);
+                         // Optional: Add a marker for user location
+                     },
+                     (error) => {
+                         console.error("Geolocation error:", error);
+                         alert("Could not get your location. Please ensure location services are enabled.");
+                         showLoading(false);
+                     },
+                     { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                 );
+             } else {
+                 alert("Geolocation is not supported by your browser.");
+             }
+         });
 
-        function removeRoute() {
-             if (map.getLayer('route')) map.removeLayer('route');
-             if (map.getLayer('route-casing')) map.removeLayer('route-casing');
-             if (map.getSource('route')) map.removeSource('route');
-             // map.off(...); // Properly remove listeners if needed
-             currentRoute = null;
-        }
-
-        function displayRouteInfo(route) {
-            directionsSummary.textContent = `${formatDuration(route.duration)} (${formatDistance(route.distance)})`;
-        }
-
-        function displayStepByStep(steps) {
-            stepByStepList.innerHTML = '';
-            if (!steps || steps.length === 0) { stepByStepContainer.classList.add('hidden'); return; }
-            steps.forEach(step => {
-                const li = document.createElement('li');
-                const iconClass = getManeuverIcon(step.maneuver.type, step.maneuver.modifier);
-                li.innerHTML = `<i class="fas ${iconClass}"></i><span>${step.maneuver.instruction}</span><span class="step-distance">${formatDistance(step.distance)}</span>`;
-                 li.onclick = () => map.flyTo({ center: step.maneuver.location, zoom: 17, pitch: 50 }); // Fly to step on click
-                stepByStepList.appendChild(li);
+        // Tab Bar Interaction (Visual Only)
+        document.querySelectorAll('.tab-bar .tab-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.tab-bar .tab-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
             });
-            stepByStepContainer.classList.remove('hidden');
-        }
+        });
 
-        function getManeuverIcon(type = '', modifier = '') {
-             type = type.toLowerCase();
-             modifier = modifier.toLowerCase();
-             if (type === 'depart') return 'fa-map-marker-alt';
-             if (type === 'arrive') return 'fa-flag-checkered';
-             if (type.includes('continue')) return 'fa-arrow-up';
-             if (type.includes('roundabout') || type.includes('rotary')) return 'fa-sync-alt';
-             if (type.includes('merge')) return 'fa-code-branch fa-rotate-90';
-             if (type.includes('fork')) return 'fa-code-branch';
-             if (modifier.includes('uturn')) return 'fa-undo';
-             if (modifier.includes('right')) return 'fa-arrow-right';
-             if (modifier.includes('left')) return 'fa-arrow-left';
-             if (modifier.includes('straight')) return 'fa-arrow-up';
-             return 'fa-directions'; // Default
-         }
 
-        function getBoundsFromRoute(coordinates) {
-            const bounds = new mapboxgl.LngLatBounds();
-            coordinates.forEach(coord => bounds.extend(coord));
-            return bounds;
-        }
-
-        function getActiveTravelProfile() {
-             const activeButton = document.querySelector('.travel-mode.active');
-             return activeButton ? activeButton.dataset.profile : 'driving-traffic';
-        }
-
-        // --- Formatting Helpers ---
-        function formatDuration(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.round((seconds % 3600) / 60);
-            let str = '';
-            if (hours > 0) str += `${hours} hr `;
-            if (minutes > 0 || hours === 0) str += `${minutes} min`;
-            return str.trim() || '< 1 min';
-        }
-        function formatDistance(meters) {
-            if (meters < 100) return `${Math.round(meters)} m`;
-            const km = meters / 1000;
-            return `${km < 10 ? km.toFixed(1) : Math.round(km)} km`;
-        }
-
-        // --- Marker Management ---
-        function addMarker(coords, title = '', className = 'marker-poi') {
-            const el = document.createElement('div');
-            el.className = `marker ${className}`;
-             // CSS primarily controls size now
-            const marker = new mapboxgl.Marker({ element: el }).setLngLat(coords).addTo(map);
-            // Popups added dynamically on click now, not here by default
-            return marker;
-        }
-
-         // --- Favorites (localStorage) ---
-         const FAVORITES_KEY = 'mapbox_app_favorites';
-         let favoritePlaces = {}; // { placeId: { feature } }
-
-         function loadSavedPlaces() {
-             const saved = localStorage.getItem(FAVORITES_KEY);
-             if (saved) { try { favoritePlaces = JSON.parse(saved); } catch (e) { console.error("Error parsing favorites:", e); localStorage.removeItem(FAVORITES_KEY); }}
-             console.log("Loaded favorites:", Object.keys(favoritePlaces).length);
-         }
-         function saveFavoritePlace(feature) {
-             const placeId = feature.id || feature.properties?.mapbox_id;
-             if (!placeId) { alert("Cannot save place without ID."); return; }
-             if (favoritePlaces[placeId]) { alert(`${feature.text || 'Place'} already favorited.`); return; }
-             favoritePlaces[placeId] = { id: placeId, text: feature.text || feature.properties?.name, place_name: feature.place_name, geometry: feature.geometry };
-             localStorage.setItem(FAVORITES_KEY, JSON.stringify(favoritePlaces));
-             alert(`${feature.text || 'Place'} added to favorites!`);
-             updateLocationPanel(feature); // Update button
-         }
-         function removeFavoritePlace(placeId) {
-              if (favoritePlaces[placeId]) {
-                 const placeName = favoritePlaces[placeId].text || 'Place';
-                 delete favoritePlaces[placeId];
-                 localStorage.setItem(FAVORITES_KEY, JSON.stringify(favoritePlaces));
-                 alert(`${placeName} removed from favorites.`);
-                 if (currentDestination && (currentDestination.id === placeId || currentDestination.properties?.mapbox_id === placeId)) { updateLocationPanel(currentDestination); }
-              }
-         }
-
-        // --- Start Application ---
-        document.addEventListener('DOMContentLoaded', initializeMap);
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeMainMap();
+             // Set initial state for filter UI
+             updateFilterUI();
+        });
 
     </script>
+
 </body>
 </html>

@@ -2,342 +2,259 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Ensure proper viewport scaling for full screen -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Full Screen Venue Finder</title>
-
-    <!-- Mapbox GL JS CSS -->
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
-
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-    <style>
-       body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; color: #333; }
-header {
-    background-color: #343a40; color: #fff; padding: 1em 2em;
-    display: flex; justify-content: space-between; align-items: center;
-}
-header h1 { margin: 0; font-size: 1.5em; }
-header button { background-color: #dc3545; color: white; border: none; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; }
-header button:hover { background-color: #c82333; }
-main { padding: 20px; max-width: 960px; margin: 20px auto; background-color: #fff; box-shadow: 0 0 15px rgba(0,0,0,0.1); border-radius: 8px; }
-h2, h3 { color: #343a40; border-bottom: 1px solid #dee2e6; padding-bottom: 10px; margin-top: 0; }
-#loginSection, #dashboardSection { margin-bottom: 30px; }
-form div { margin-bottom: 15px; }
-label { display: block; margin-bottom: 5px; font-weight: bold; }
-input[type="text"], input[type="password"], input[type="number"], input[type="url"], textarea {
-    width: calc(100% - 22px); padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em;
-}
-textarea { resize: vertical; }
-button[type="submit"], button[type="button"] {
-    background-color: #007bff; color: white; border: none; padding: 10px 15px;
-    border-radius: 4px; cursor: pointer; font-size: 1em; margin-right: 10px;
-}
-button[type="submit"]:hover, button[type="button"]:hover { background-color: #0056b3; }
-#cancelEditButton { background-color: #6c757d; }
-#cancelEditButton:hover { background-color: #5a6268; }
-.error-message { color: #dc3545; font-size: 0.9em; margin-top: 5px; }
-#adminProductList table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-#adminProductList th, #adminProductList td { border: 1px solid #dee2e6; padding: 10px; text-align: left; vertical-align: middle;}
-#adminProductList th { background-color: #e9ecef; color: #495057; }
-#adminProductList img { max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 3px; }
-.actions button { margin-right: 5px; padding: 5px 8px; font-size: 0.85em; }
-.actions .edit-btn { background-color: #ffc107; color: #212529; }
-.actions .edit-btn:hover { background-color: #e0a800; }
-.actions .delete-btn { background-color: #dc3545; }
-.actions .delete-btn:hover { background-color: #c82333; }
-#showAddProductFormButton { margin-bottom: 20px; background-color: #28a745; }
-#showAddProductFormButton:hover { background-color: #218838; }
-#productFormContainer { background-color: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; border-radius: 5px; margin-bottom: 20px; }
-footer { text-align: center; padding: 20px; background-color: #343a40; color: #fff; margin-top: 30px; font-size: 0.9em; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers - ABA Bank</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-      <header>
-        <h1>Store Admin Panel</h1>
-        <button id="logoutButton" style="display:none;">Logout</button>
-    </header>
+    <header><h1>ABA Bank Portal</h1></header>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="customers.html">Customers</a></li>
+            <li><a href="accounts.html">Accounts</a></li>
+            <li><a href="transactions.html">Transactions</a></li>
+        </ul>
+    </nav>
 
-    <main>
-        <section id="loginSection">
-            <h2>Admin Login</h2>
-            <form id="loginForm">
-                <div>
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" required value="admin">
-                </div>
-                <div>
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required value="password123">
-                </div>
-                <button type="submit">Login</button>
-                <p id="loginError" class="error-message"></p>
+    <div class="container">
+        <!-- Create Customer Section (Same as before) -->
+        <section id="create-customer-section" class="form-section">
+            <h2>Create New Customer</h2>
+            <form id="createCustomerForm">
+                <div><label for="custFullName">Full Name:</label><input type="text" id="custFullName" required></div>
+                <div><label for="custEmail">Email (Optional):</label><input type="email" id="custEmail"></div>
+                <div><label for="custPhone">Phone (Optional):</label><input type="tel" id="custPhone"></div>
+                <button type="submit">Create Customer</button>
             </form>
+            <div id="createCustomerResponse" class="api-response" style="display:none;"></div>
         </section>
 
-        <section id="dashboardSection" style="display:none;">
-            <h2>Product Management</h2>
-            <button id="showAddProductFormButton">Add New Product</button>
-            <div id="productFormContainer" style="display:none;">
-                <h3 id="formTitle">Add Product</h3>
-                <form id="productForm">
-                    <input type="hidden" id="productId" name="productId">
-                    <div><label for="productName">Name:</label><input type="text" id="productName" required></div>
-                    <div><label for="productPrice">Price:</label><input type="number" id="productPrice" step="0.01" required></div>
-                    <div><label for="productImage">Image URL:</label><input type="url" id="productImage" required placeholder="https://via.placeholder.com/150"></div>
-                    <div><label for="productDescription">Description:</label><textarea id="productDescription" rows="3" required></textarea></div>
-                    <button type="submit" id="saveProductButton">Save Product</button>
-                    <button type="button" id="cancelEditButton">Cancel</button>
-                    <p id="productFormError" class="error-message"></p>
-                </form>
+        <!-- View/Update Customer Section (Same as before, but we'll ensure currentCustomerIdForLocation is set) -->
+        <section class="form-section">
+            <h2>View / Update Customer</h2>
+            <div>
+                <label for="viewCustomerId">Customer ID:</label>
+                <input type="text" id="viewCustomerId" placeholder="Enter Customer UUID to view/update/report location">
+                <button onclick="fetchCustomerDetails()">View Details</button>
             </div>
-            <h3>Existing Products</h3>
-            <div id="adminProductList"><p>Loading products...</p></div>
+            <div id="customerDetailsArea" style="display:none; margin-top:15px;">
+                <h3>Customer Details:</h3>
+                <form id="updateCustomerForm">
+                    <input type="hidden" id="updateCustIdHidden">
+                    <div><label for="updateFullName">Full Name:</label><input type="text" id="updateFullName"></div>
+                    <div><label for="updateEmail">Email:</label><input type="email" id="updateEmail"></div>
+                    <div><label for="updatePhone">Phone:</label><input type="tel" id="updatePhone"></div>
+                    <button type="submit">Update Customer</button>
+                </form>
+                <div id="currentLocationInfo" class="info-box" style="margin-top:10px; display:none;">
+                    <h4>Last Reported Location:</h4>
+                    <p id="locLat">Lat: N/A</p>
+                    <p id="locLon">Lon: N/A</p>
+                    <p id="locAcc">Accuracy: N/A</p>
+                    <p id="locTime">Timestamp: N/A</p>
+                </div>
+                <h4>Linked Accounts:</h4>
+                <ul id="customerAccountsList"></ul>
+            </div>
+            <div id="viewCustomerResponse" class="api-response" style="display:none;"></div>
         </section>
-    </main>
-    <footer><p>© 2024 Store Admin</p></footer>
-    <script src="admin_script.js"></script>
+
+        <!-- Report Customer Location Section (NEW) -->
+        <section id="report-location-section" class="form-section" style="display:none;">
+            <h2>Report Customer Location</h2>
+            <form id="reportLocationForm">
+                <div>
+                    <label for="locLatitude">Latitude (-90 to 90):</label>
+                    <input type="number" id="locLatitude" step="any" min="-90" max="90" required>
+                </div>
+                <div>
+                    <label for="locLongitude">Longitude (-180 to 180):</label>
+                    <input type="number" id="locLongitude" step="any" min="-180" max="180" required>
+                </div>
+                <div>
+                    <label for="locAccuracy">Accuracy (meters, Optional):</label>
+                    <input type="number" id="locAccuracy" step="any" min="0">
+                </div>
+                <button type="button" onclick="autofillBrowserLocation()">Use Browser Location (if available)</button>
+                <button type="submit" style="margin-top:10px;">Report Location</button>
+            </form>
+            <div id="reportLocationResponse" class="api-response" style="display:none;"></div>
+        </section>
+    </div>
+
+    <script src="js/main.js"></script>
     <script>
-       document.addEventListener('DOMContentLoaded', () => {
-    const loginSection = document.getElementById('loginSection');
-    const dashboardSection = document.getElementById('dashboardSection');
-    const loginForm = document.getElementById('loginForm');
-    const loginError = document.getElementById('loginError');
-    const logoutButton = document.getElementById('logoutButton');
-    const adminProductList = document.getElementById('adminProductList');
-    const showAddProductFormButton = document.getElementById('showAddProductFormButton');
-    const productFormContainer = document.getElementById('productFormContainer');
-    const productForm = document.getElementById('productForm');
-    const formTitle = document.getElementById('formTitle');
-    const productIdInput = document.getElementById('productId');
-    const productNameInput = document.getElementById('productName');
-    const productPriceInput = document.getElementById('productPrice');
-    const productImageInput = document.getElementById('productImage');
-    const productDescriptionInput = document.getElementById('productDescription');
-    const cancelEditButton = document.getElementById('cancelEditButton');
-    const productFormError = document.getElementById('productFormError');
+        let currentCustomerIdForLocation = null; // To store the ID of the customer whose location we're reporting
 
-    const backendAdminApiBaseUrl = 'http://127.0.0.1:5000/admin/api'; 
-    const backendPublicApiBaseUrl = 'http://127.0.0.1:5000/api';
+        // Create Customer (Same as before)
+        document.getElementById('createCustomerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                full_name: document.getElementById('custFullName').value,
+                email: document.getElementById('custEmail').value || null,
+                phone_number: document.getElementById('custPhone').value || null,
+            };
+            if (!payload.email) delete payload.email;
+            if (!payload.phone_number) delete payload.phone_number;
 
-    // Helper function to make requests
-    async function makeRequest(url, method = 'GET', body = null, needsAuth = false) {
-        const options = {
-            method: method,
-            headers: {},
-        };
-        if (needsAuth) {
-            options.credentials = 'include'; // Crucial for sending session cookies
-        }
-        if (body) {
-            options.headers['Content-Type'] = 'application/json';
-            options.body = JSON.stringify(body);
-        }
-        console.log(`Making ${method} request to ${url} (Auth: ${needsAuth}) with options:`, options);
-        
-        const response = await fetch(url, options);
-        console.log(`Response from ${url}: Status ${response.status}`);
-        
-        // Try to parse JSON regardless of status for error messages, but don't throw for 401 here
-        let responseData = null;
-        try {
-            responseData = await response.json();
-        } catch(e) {
-            // If response is not JSON (e.g. empty for 204, or text for some errors)
-            if (!response.ok && response.status !== 401) { // only throw if not OK and not specifically a 401
-                 throw new Error(`Request failed with status ${response.status} and non-JSON response.`);
+            try {
+                const data = await apiCall('/customers/', 'POST', payload);
+                showResponse('createCustomerResponse', 'Customer created successfully!\nID: ' + data.id + '\n\n' + JSON.stringify(data, null, 2));
+                document.getElementById('createCustomerForm').reset();
+            } catch (error) {
+                showResponse('createCustomerResponse', 'Error: ' + error.message, false);
             }
-            // For 200/201/204 with no JSON body, responseData remains null, which is fine.
+        });
+
+        // Fetch Customer Details (Modified to show location section and current location)
+        async function fetchCustomerDetails() {
+            const customerIdInput = document.getElementById('viewCustomerId').value;
+            const detailsArea = document.getElementById('customerDetailsArea');
+            const accountsList = document.getElementById('customerAccountsList');
+            const reportLocationSection = document.getElementById('report-location-section');
+            const currentLocationInfoDiv = document.getElementById('currentLocationInfo');
+
+
+            if (!customerIdInput) {
+                showResponse('viewCustomerResponse', 'Please enter a Customer ID.', false);
+                detailsArea.style.display = 'none';
+                reportLocationSection.style.display = 'none';
+                currentLocationInfoDiv.style.display = 'none';
+                currentCustomerIdForLocation = null;
+                return;
+            }
+            currentCustomerIdForLocation = customerIdInput; // Set for location reporting
+            detailsArea.style.display = 'none';
+            reportLocationSection.style.display = 'none';
+            currentLocationInfoDiv.style.display = 'none';
+            accountsList.innerHTML = '';
+            showResponse('viewCustomerResponse', 'Fetching details...', true);
+
+            try {
+                const customerData = await apiCall(`/customers/${currentCustomerIdForLocation}`, 'GET');
+                document.getElementById('updateCustIdHidden').value = customerData.id;
+                document.getElementById('updateFullName').value = customerData.full_name;
+                document.getElementById('updateEmail').value = customerData.email || '';
+                document.getElementById('updatePhone').value = customerData.phone_number || '';
+
+                // Display current location
+                document.getElementById('locLat').textContent = `Lat: ${customerData.last_known_latitude !== null ? customerData.last_known_latitude : 'N/A'}`;
+                document.getElementById('locLon').textContent = `Lon: ${customerData.last_known_longitude !== null ? customerData.last_known_longitude : 'N/A'}`;
+                document.getElementById('locAcc').textContent = `Accuracy: ${customerData.last_location_accuracy !== null ? customerData.last_location_accuracy + 'm' : 'N/A'}`;
+                document.getElementById('locTime').textContent = `Timestamp: ${customerData.last_location_timestamp ? formatDate(customerData.last_location_timestamp) : 'N/A'}`;
+                currentLocationInfoDiv.style.display = 'block';
+
+
+                detailsArea.style.display = 'block';
+                reportLocationSection.style.display = 'block'; // Show location reporting form
+                showResponse('viewCustomerResponse', 'Customer details loaded.', true);
+
+                const customerAccounts = await apiCall(`/customers/${currentCustomerIdForLocation}/accounts`, 'GET');
+                if (customerAccounts.length > 0) {
+                    customerAccounts.forEach(acc => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `Acc No: <code>${acc.account_number}</code>, Type: ${acc.account_type}, Balance: ${acc.balance}, Nickname: ${acc.nickname || 'N/A'}`;
+                        accountsList.appendChild(li);
+                    });
+                } else {
+                    accountsList.innerHTML = '<li>No accounts found for this customer.</li>';
+                }
+
+            } catch (error) {
+                showResponse('viewCustomerResponse', 'Error: ' + error.message, false);
+                detailsArea.style.display = 'none';
+                reportLocationSection.style.display = 'none';
+                currentLocationInfoDiv.style.display = 'none';
+                currentCustomerIdForLocation = null;
+            }
         }
 
-        if (!response.ok && response.status !== 401) { // Allow 401 to be handled by caller specifically
-             throw new Error(responseData?.error || `Request failed with status ${response.status}`);
-        }
-        // Return both the response object and parsed data for flexibility
-        return { response, data: responseData };
-    }
-    
-    // REMOVED checkAuth function
+        // Update Customer (Same as before)
+        document.getElementById('updateCustomerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const customerId = document.getElementById('updateCustIdHidden').value;
+            const payload = {
+                full_name: document.getElementById('updateFullName').value || undefined,
+                email: document.getElementById('updateEmail').value || undefined,
+                phone_number: document.getElementById('updatePhone').value || undefined,
+            };
+            Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
 
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        loginError.textContent = '';
-        const username = loginForm.username.value;
-        const password = loginForm.password.value;
-        try {
-            // The 'true' for needsAuth is critical here
-            const { response, data } = await makeRequest(`${backendAdminApiBaseUrl}/login`, 'POST', { username, password }, true);
-            
-            if (response.ok) {
-                console.log("Login successful.");
-                showDashboard();
-                fetchAdminProducts(); // Fetch products after successful login
+            if (Object.keys(payload).length === 0) {
+                showResponse('viewCustomerResponse', 'No changes to update.', false); return;
+            }
+            try {
+                const data = await apiCall(`/customers/${customerId}`, 'PUT', payload);
+                showResponse('viewCustomerResponse', 'Customer updated successfully!\n\n' + JSON.stringify(data, null, 2));
+                 // Re-fetch to show updated details including any server-side changes
+                fetchCustomerDetails();
+            } catch (error) {
+                showResponse('viewCustomerResponse', 'Error updating customer: ' + error.message, false);
+            }
+        });
+
+        // Report Customer Location (NEW)
+        document.getElementById('reportLocationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentCustomerIdForLocation) {
+                showResponse('reportLocationResponse', 'No customer selected. Please view a customer first.', false);
+                return;
+            }
+
+            const payload = {
+                latitude: parseFloat(document.getElementById('locLatitude').value),
+                longitude: parseFloat(document.getElementById('locLongitude').value),
+                accuracy: document.getElementById('locAccuracy').value ? parseFloat(document.getElementById('locAccuracy').value) : null,
+                // timestamp: new Date().toISOString() // Client-side timestamp, or let API set it
+            };
+            if (payload.accuracy === null) delete payload.accuracy;
+
+
+            try {
+                const data = await apiCall(`/customers/${currentCustomerIdForLocation}/location`, 'POST', payload);
+                showResponse('reportLocationResponse', 'Location reported successfully!\n\n' + JSON.stringify(data, null, 2));
+                // Update displayed location info
+                document.getElementById('locLat').textContent = `Lat: ${data.last_known_latitude}`;
+                document.getElementById('locLon').textContent = `Lon: ${data.last_known_longitude}`;
+                document.getElementById('locAcc').textContent = `Accuracy: ${data.last_location_accuracy !== null ? data.last_location_accuracy + 'm' : 'N/A'}`;
+                document.getElementById('locTime').textContent = `Timestamp: ${formatDate(data.last_location_timestamp)}`;
+
+            } catch (error) {
+                showResponse('reportLocationResponse', 'Error reporting location: ' + error.message, false);
+            }
+        });
+
+        // Autofill location using browser's Geolocation API (NEW)
+        function autofillBrowserLocation() {
+            if (navigator.geolocation) {
+                showResponse('reportLocationResponse', 'Fetching browser location...', true);
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        document.getElementById('locLatitude').value = position.coords.latitude;
+                        document.getElementById('locLongitude').value = position.coords.longitude;
+                        if (position.coords.accuracy) {
+                            document.getElementById('locAccuracy').value = position.coords.accuracy;
+                        }
+                        showResponse('reportLocationResponse', 'Browser location autofilled. You can now submit.', true);
+                    },
+                    (error) => {
+                        let message = 'Error getting browser location: ';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED: message += "User denied the request for Geolocation."; break;
+                            case error.POSITION_UNAVAILABLE: message += "Location information is unavailable."; break;
+                            case error.TIMEOUT: message += "The request to get user location timed out."; break;
+                            case error.UNKNOWN_ERROR: message += "An unknown error occurred."; break;
+                        }
+                        showResponse('reportLocationResponse', message, false);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
             } else {
-                // data might be null if error response wasn't JSON
-                loginError.textContent = data?.error || `Login failed (Status: ${response.status}).`;
+                showResponse('reportLocationResponse', 'Geolocation is not supported by this browser.', false);
             }
-        } catch (error) {
-            console.error('Login error:', error);
-            loginError.textContent = `An error occurred during login: ${error.message}`;
-        }
-    });
-
-    logoutButton.addEventListener('click', async () => {
-        try {
-            await makeRequest(`${backendAdminApiBaseUrl}/logout`, 'POST', null, true);
-            showLogin();
-        } catch (error) { 
-            console.error('Logout error:', error); 
-            alert('Logout failed.'); 
-        }
-    });
-
-    function showLogin() {
-        loginSection.style.display = 'block'; 
-        dashboardSection.style.display = 'none';
-        logoutButton.style.display = 'none'; 
-        productFormContainer.style.display = 'none';
-        adminProductList.innerHTML = '<p>Please log in to manage products.</p>'; // Clear product list
-    }
-
-    function showDashboard() {
-        loginSection.style.display = 'none'; 
-        dashboardSection.style.display = 'block';
-        logoutButton.style.display = 'block';
-    }
-
-    async function fetchAdminProducts() {
-        adminProductList.innerHTML = '<p>Loading products...</p>';
-        try { 
-            const { response, data } = await makeRequest(`${backendPublicApiBaseUrl}/products`); // No auth needed for GET
-            if (response.ok) {
-                renderAdminProducts(data);
-            } else {
-                 adminProductList.innerHTML = `<p class="error-message">Could not load products: ${data?.error || `Status ${response.status}`}</p>`;
-            }
-        } catch (error) {
-            console.error('Error fetching admin products:', error);
-            adminProductList.innerHTML = `<p class="error-message">Could not load products: ${error.message}</p>`;
-        }
-    }
-
-    function renderAdminProducts(products) {
-        if (!products || products.length === 0) {
-            adminProductList.innerHTML = '<p>No products available.</p>'; return;
-        }
-        const table = document.createElement('table');
-        table.innerHTML = `
-            <thead><tr><th>ID</th><th>Image</th><th>Name</th><th>Price</th><th>Actions</th></tr></thead>
-            <tbody>
-                ${products.map(p => `
-                    <tr><td>${p.id}</td><td><img src="${p.image}" alt="${p.name}"></td>
-                        <td>${p.name}</td><td>$${p.price.toFixed(2)}</td>
-                        <td class="actions">
-                            <button class="edit-btn" data-id="${p.id}">Edit</button>
-                            <button class="delete-btn" data-id="${p.id}">Delete</button>
-                        </td></tr>`).join('')}
-            </tbody>`;
-        adminProductList.innerHTML = ''; 
-        adminProductList.appendChild(table);
-        table.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', () => handleEditProduct(btn.dataset.id, products)));
-        table.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => handleDeleteProduct(btn.dataset.id)));
-    }
-
-    showAddProductFormButton.addEventListener('click', () => {
-        formTitle.textContent = 'Add New Product'; 
-        productForm.reset();
-        productIdInput.value = ''; 
-        productFormError.textContent = '';
-        productFormContainer.style.display = 'block';
-    });
-    cancelEditButton.addEventListener('click', () => { 
-        productFormContainer.style.display = 'none'; 
-        productForm.reset(); 
-    });
-
-    productForm.addEventListener('submit', async (e) => {
-        e.preventDefault(); 
-        productFormError.textContent = '';
-        const id = productIdInput.value;
-        const productData = {
-            name: productNameInput.value, 
-            price: parseFloat(productPriceInput.value),
-            image: productImageInput.value, 
-            description: productDescriptionInput.value
-        };
-
-        if (isNaN(productData.price) || productData.price <= 0) {
-            productFormError.textContent = 'Price must be a positive number.'; return;
         }
 
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `${backendAdminApiBaseUrl}/products/${id}` : `${backendAdminApiBaseUrl}/products`;
-
-        try {
-            const { response, data } = await makeRequest(url, method, productData, true); // needsAuth = true
-            
-            if (response.ok) {
-                productFormContainer.style.display = 'none'; 
-                productForm.reset();
-                fetchAdminProducts(); // Refresh product list
-                alert(`Product ${id ? 'updated' : 'added'}!`);
-            } else if (response.status === 401) {
-                productFormError.textContent = data?.error || 'Unauthorized. Please log in again.';
-                showLogin(); // Or prompt for login
-            }
-            else {
-                productFormError.textContent = data?.error || `Failed to ${id ? 'update' : 'add'} product (Status: ${response.status}).`;
-            }
-        } catch (error) {
-            console.error('Product form error:', error);
-            productFormError.textContent = `An error occurred: ${error.message}`;
-        }
-    });
-
-    function handleEditProduct(id, products) {
-        const product = products.find(p => p.id == id);
-        if (product) {
-            formTitle.textContent = 'Edit Product'; 
-            productIdInput.value = product.id;
-            productNameInput.value = product.name; 
-            productPriceInput.value = product.price;
-            productImageInput.value = product.image; 
-            productDescriptionInput.value = product.description;
-            productFormError.textContent = ''; 
-            productFormContainer.style.display = 'block';
-        }
-    }
-
-    async function handleDeleteProduct(id) {
-        if (!confirm(`Delete product ID ${id}?`)) return;
-        try {
-            const { response, data } = await makeRequest(`${backendAdminApiBaseUrl}/products/${id}`, 'DELETE', null, true); // needsAuth = true
-            
-            if (response.ok) {
-                fetchAdminProducts(); // Refresh list
-                alert(data?.message || 'Product deleted.');
-            } else if (response.status === 401) {
-                alert(data?.error || 'Unauthorized. Please log in again.');
-                showLogin();
-            } else {
-                alert(data?.error || `Failed to delete (Status: ${response.status}).`);
-            }
-        } catch (error) { 
-            console.error('Delete error:', error); 
-            alert(`Error deleting: ${error.message}`); 
-        }
-    }
-    
-    // Initial Load for Admin Panel
-    function initializeAdminApp() {
-        console.log("Initializing Admin Panel App...");
-        // No automatic checkAuth on load. User must log in.
-        showLogin(); // Default to login screen
-    }
-    initializeAdminApp();
-});
     </script>
-
 </body>
 </html>

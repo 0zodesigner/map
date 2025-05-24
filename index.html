@@ -1,260 +1,348 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="km">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customers - ABA Bank</title>
-    <link rel="stylesheet" href="style.css">
+    <title>បម្លែងសំឡេង/វីដេអូទៅជាអក្សរខ្មែរ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;700&display=swap" rel="stylesheet">
 </head>
+<style>
+body {
+    font-family: 'Noto Sans Khmer', sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    line-height: 1.8;
+}
+
+.container {
+    background-color: #fff;
+    padding: 25px 40px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 700px;
+    text-align: center;
+}
+
+h1 {
+    color: #007bff; /* A nice blue */
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+h2 {
+    color: #333;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.upload-area {
+    border: 2px dashed #007bff;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upload-area:hover {
+    background-color: #e9ecef;
+}
+
+.file-name-display {
+    margin-top: 10px;
+    font-style: italic;
+    color: #555;
+}
+
+.info-text {
+    font-size: 0.9em;
+    color: #777;
+}
+
+.btn {
+    background-color: #6c757d; /* Grey */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Noto Sans Khmer', sans-serif;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+    margin: 5px;
+}
+
+.btn:hover {
+    background-color: #5a6268;
+}
+
+.btn-primary {
+    background-color: #007bff; /* Blue */
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+#statusArea {
+    margin: 20px 0;
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    margin-top: 10px;
+    overflow: hidden; /* Ensures inner bar doesn't overflow rounded corners */
+}
+
+.progress-bar {
+    width: 0%;
+    height: 20px;
+    background-color: #28a745; /* Green */
+    text-align: center;
+    line-height: 20px;
+    color: white;
+    border-radius: 5px;
+    transition: width 0.4s ease;
+}
+
+
+#transcribedText {
+    width: calc(100% - 22px); /* Account for padding/border */
+    padding: 10px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: 'Noto Sans Khmer', sans-serif;
+    font-size: 1em;
+    min-height: 150px;
+    resize: vertical;
+}
+
+footer {
+    margin-top: 30px;
+    font-size: 0.8em;
+    color: #888;
+}
+</style>
 <body>
-    <header><h1>ABA Bank Portal</h1></header>
-    <nav>
-        <ul>
-            <li><a href="index.html">Home</a></li>
-            <li><a href="customers.html">Customers</a></li>
-            <li><a href="accounts.html">Accounts</a></li>
-            <li><a href="transactions.html">Transactions</a></li>
-        </ul>
-    </nav>
-
     <div class="container">
-        <!-- Create Customer Section (Same as before) -->
-        <section id="create-customer-section" class="form-section">
-            <h2>Create New Customer</h2>
-            <form id="createCustomerForm">
-                <div><label for="custFullName">Full Name:</label><input type="text" id="custFullName" required></div>
-                <div><label for="custEmail">Email (Optional):</label><input type="email" id="custEmail"></div>
-                <div><label for="custPhone">Phone (Optional):</label><input type="tel" id="custPhone"></div>
-                <button type="submit">Create Customer</button>
-            </form>
-            <div id="createCustomerResponse" class="api-response" style="display:none;"></div>
-        </section>
+        <h1>កម្មវិធីបម្លែងសំឡេង និងវីដេអូ ទៅជាអក្សរខ្មែរ</h1>
+        <p>និយាយមក យើងសរសេរជូន!</p>
 
-        <!-- View/Update Customer Section (Same as before, but we'll ensure currentCustomerIdForLocation is set) -->
-        <section class="form-section">
-            <h2>View / Update Customer</h2>
-            <div>
-                <label for="viewCustomerId">Customer ID:</label>
-                <input type="text" id="viewCustomerId" placeholder="Enter Customer UUID to view/update/report location">
-                <button onclick="fetchCustomerDetails()">View Details</button>
-            </div>
-            <div id="customerDetailsArea" style="display:none; margin-top:15px;">
-                <h3>Customer Details:</h3>
-                <form id="updateCustomerForm">
-                    <input type="hidden" id="updateCustIdHidden">
-                    <div><label for="updateFullName">Full Name:</label><input type="text" id="updateFullName"></div>
-                    <div><label for="updateEmail">Email:</label><input type="email" id="updateEmail"></div>
-                    <div><label for="updatePhone">Phone:</label><input type="tel" id="updatePhone"></div>
-                    <button type="submit">Update Customer</button>
-                </form>
-                <div id="currentLocationInfo" class="info-box" style="margin-top:10px; display:none;">
-                    <h4>Last Reported Location:</h4>
-                    <p id="locLat">Lat: N/A</p>
-                    <p id="locLon">Lon: N/A</p>
-                    <p id="locAcc">Accuracy: N/A</p>
-                    <p id="locTime">Timestamp: N/A</p>
-                </div>
-                <h4>Linked Accounts:</h4>
-                <ul id="customerAccountsList"></ul>
-            </div>
-            <div id="viewCustomerResponse" class="api-response" style="display:none;"></div>
-        </section>
+        <div class="upload-area">
+            <input type="file" id="fileInput" accept=".mp3,.mp4" style="display: none;">
+            <button id="uploadButton" class="btn">ជ្រើសរើសឯកសារ (MP3/MP4)</button>
+            <p id="fileName" class="file-name-display"></p>
+            <p class="info-text">ទំហំអតិបរមា៖ 50MB (សម្រាប់ការបង្ហាញនេះ)</p>
+        </div>
 
-        <!-- Report Customer Location Section (NEW) -->
-        <section id="report-location-section" class="form-section" style="display:none;">
-            <h2>Report Customer Location</h2>
-            <form id="reportLocationForm">
-                <div>
-                    <label for="locLatitude">Latitude (-90 to 90):</label>
-                    <input type="number" id="locLatitude" step="any" min="-90" max="90" required>
-                </div>
-                <div>
-                    <label for="locLongitude">Longitude (-180 to 180):</label>
-                    <input type="number" id="locLongitude" step="any" min="-180" max="180" required>
-                </div>
-                <div>
-                    <label for="locAccuracy">Accuracy (meters, Optional):</label>
-                    <input type="number" id="locAccuracy" step="any" min="0">
-                </div>
-                <button type="button" onclick="autofillBrowserLocation()">Use Browser Location (if available)</button>
-                <button type="submit" style="margin-top:10px;">Report Location</button>
-            </form>
-            <div id="reportLocationResponse" class="api-response" style="display:none;"></div>
-        </section>
+        <button id="transcribeButton" class="btn btn-primary" disabled>ចាប់ផ្តើមបម្លែង</button>
+
+        <div id="statusArea">
+            <p id="statusText"></p>
+            <div class="progress-bar-container" style="display: none;">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div id="resultArea" style="display:none;">
+            <h2>អត្ថបទដែលបានបម្លែង៖</h2>
+            <textarea id="transcribedText" rows="10" readonly></textarea>
+            <button id="copyButton" class="btn">ចម្លងអត្ថបទ</button>
+        </div>
+
+        <footer>
+            <p>© ២០២៣ - សរសេរ (Sorsé) - ជាគម្រោងបង្ហាញ</p>
+        </footer>
     </div>
 
-    <script src="js/main.js"></script>
     <script>
-        let currentCustomerIdForLocation = null; // To store the ID of the customer whose location we're reporting
+    document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('fileInput');
+    const uploadButton = document.getElementById('uploadButton');
+    const transcribeButton = document.getElementById('transcribeButton');
+    const fileNameDisplay = document.getElementById('fileName');
+    const statusText = document.getElementById('statusText');
+    const progressBarContainer = document.querySelector('.progress-bar-container');
+    const progressBar = document.getElementById('progressBar');
+    const resultArea = document.getElementById('resultArea');
+    const transcribedText = document.getElementById('transcribedText');
+    const copyButton = document.getElementById('copyButton');
 
-        // Create Customer (Same as before)
-        document.getElementById('createCustomerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const payload = {
-                full_name: document.getElementById('custFullName').value,
-                email: document.getElementById('custEmail').value || null,
-                phone_number: document.getElementById('custPhone').value || null,
-            };
-            if (!payload.email) delete payload.email;
-            if (!payload.phone_number) delete payload.phone_number;
+    let selectedFile = null;
 
-            try {
-                const data = await apiCall('/customers/', 'POST', payload);
-                showResponse('createCustomerResponse', 'Customer created successfully!\nID: ' + data.id + '\n\n' + JSON.stringify(data, null, 2));
-                document.getElementById('createCustomerForm').reset();
-            } catch (error) {
-                showResponse('createCustomerResponse', 'Error: ' + error.message, false);
-            }
-        });
+    uploadButton.addEventListener('click', () => {
+        fileInput.click();
+    });
 
-        // Fetch Customer Details (Modified to show location section and current location)
-        async function fetchCustomerDetails() {
-            const customerIdInput = document.getElementById('viewCustomerId').value;
-            const detailsArea = document.getElementById('customerDetailsArea');
-            const accountsList = document.getElementById('customerAccountsList');
-            const reportLocationSection = document.getElementById('report-location-section');
-            const currentLocationInfoDiv = document.getElementById('currentLocationInfo');
+    fileInput.addEventListener('change', (event) => {
+        selectedFile = event.target.files[0];
+        if (selectedFile) {
+            console.log('File selected:', selectedFile); // Log selected file details
+            fileNameDisplay.textContent = `ឯកសារដែលបានជ្រើសរើស៖ ${selectedFile.name}`;
+            transcribeButton.disabled = false;
+            statusText.textContent = 'ឯកសារបានត្រៀមរួចរាល់សម្រាប់បម្លែង។';
+            statusText.style.color = '#333';
+            resultArea.style.display = 'none';
+            transcribedText.value = '';
+            progressBar.style.width = '0%';
+            progressBarContainer.style.display = 'none';
+        } else {
+            console.log('File selection cancelled or no file chosen.');
+            fileNameDisplay.textContent = '';
+            transcribeButton.disabled = true;
+            statusText.textContent = '';
+            selectedFile = null; // Ensure selectedFile is reset
+        }
+    });
 
-
-            if (!customerIdInput) {
-                showResponse('viewCustomerResponse', 'Please enter a Customer ID.', false);
-                detailsArea.style.display = 'none';
-                reportLocationSection.style.display = 'none';
-                currentLocationInfoDiv.style.display = 'none';
-                currentCustomerIdForLocation = null;
-                return;
-            }
-            currentCustomerIdForLocation = customerIdInput; // Set for location reporting
-            detailsArea.style.display = 'none';
-            reportLocationSection.style.display = 'none';
-            currentLocationInfoDiv.style.display = 'none';
-            accountsList.innerHTML = '';
-            showResponse('viewCustomerResponse', 'Fetching details...', true);
-
-            try {
-                const customerData = await apiCall(`/customers/${currentCustomerIdForLocation}`, 'GET');
-                document.getElementById('updateCustIdHidden').value = customerData.id;
-                document.getElementById('updateFullName').value = customerData.full_name;
-                document.getElementById('updateEmail').value = customerData.email || '';
-                document.getElementById('updatePhone').value = customerData.phone_number || '';
-
-                // Display current location
-                document.getElementById('locLat').textContent = `Lat: ${customerData.last_known_latitude !== null ? customerData.last_known_latitude : 'N/A'}`;
-                document.getElementById('locLon').textContent = `Lon: ${customerData.last_known_longitude !== null ? customerData.last_known_longitude : 'N/A'}`;
-                document.getElementById('locAcc').textContent = `Accuracy: ${customerData.last_location_accuracy !== null ? customerData.last_location_accuracy + 'm' : 'N/A'}`;
-                document.getElementById('locTime').textContent = `Timestamp: ${customerData.last_location_timestamp ? formatDate(customerData.last_location_timestamp) : 'N/A'}`;
-                currentLocationInfoDiv.style.display = 'block';
-
-
-                detailsArea.style.display = 'block';
-                reportLocationSection.style.display = 'block'; // Show location reporting form
-                showResponse('viewCustomerResponse', 'Customer details loaded.', true);
-
-                const customerAccounts = await apiCall(`/customers/${currentCustomerIdForLocation}/accounts`, 'GET');
-                if (customerAccounts.length > 0) {
-                    customerAccounts.forEach(acc => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `Acc No: <code>${acc.account_number}</code>, Type: ${acc.account_type}, Balance: ${acc.balance}, Nickname: ${acc.nickname || 'N/A'}`;
-                        accountsList.appendChild(li);
-                    });
-                } else {
-                    accountsList.innerHTML = '<li>No accounts found for this customer.</li>';
-                }
-
-            } catch (error) {
-                showResponse('viewCustomerResponse', 'Error: ' + error.message, false);
-                detailsArea.style.display = 'none';
-                reportLocationSection.style.display = 'none';
-                currentLocationInfoDiv.style.display = 'none';
-                currentCustomerIdForLocation = null;
-            }
+    transcribeButton.addEventListener('click', async () => {
+        if (!selectedFile) {
+            console.warn('Transcribe button clicked but no file selected.');
+            statusText.textContent = 'សូមជ្រើសរើសឯកសារជាមុនសិន!';
+            statusText.style.color = 'red';
+            return;
         }
 
-        // Update Customer (Same as before)
-        document.getElementById('updateCustomerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const customerId = document.getElementById('updateCustIdHidden').value;
-            const payload = {
-                full_name: document.getElementById('updateFullName').value || undefined,
-                email: document.getElementById('updateEmail').value || undefined,
-                phone_number: document.getElementById('updatePhone').value || undefined,
-            };
-            Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+        console.log('Starting transcription for:', selectedFile.name);
+        transcribeButton.disabled = true;
+        uploadButton.disabled = true;
+        statusText.textContent = 'កំពុងផ្ទុកឡើង និងបម្លែង...';
+        statusText.style.color = '#333';
+        progressBarContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+        resultArea.style.display = 'none';
 
-            if (Object.keys(payload).length === 0) {
-                showResponse('viewCustomerResponse', 'No changes to update.', false); return;
-            }
-            try {
-                const data = await apiCall(`/customers/${customerId}`, 'PUT', payload);
-                showResponse('viewCustomerResponse', 'Customer updated successfully!\n\n' + JSON.stringify(data, null, 2));
-                 // Re-fetch to show updated details including any server-side changes
-                fetchCustomerDetails();
-            } catch (error) {
-                showResponse('viewCustomerResponse', 'Error updating customer: ' + error.message, false);
-            }
-        });
+        const formData = new FormData();
+        formData.append('file', selectedFile); // Key must match what Flask expects ('file')
 
-        // Report Customer Location (NEW)
-        document.getElementById('reportLocationForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!currentCustomerIdForLocation) {
-                showResponse('reportLocationResponse', 'No customer selected. Please view a customer first.', false);
-                return;
-            }
-
-            const payload = {
-                latitude: parseFloat(document.getElementById('locLatitude').value),
-                longitude: parseFloat(document.getElementById('locLongitude').value),
-                accuracy: document.getElementById('locAccuracy').value ? parseFloat(document.getElementById('locAccuracy').value) : null,
-                // timestamp: new Date().toISOString() // Client-side timestamp, or let API set it
-            };
-            if (payload.accuracy === null) delete payload.accuracy;
-
-
-            try {
-                const data = await apiCall(`/customers/${currentCustomerIdForLocation}/location`, 'POST', payload);
-                showResponse('reportLocationResponse', 'Location reported successfully!\n\n' + JSON.stringify(data, null, 2));
-                // Update displayed location info
-                document.getElementById('locLat').textContent = `Lat: ${data.last_known_latitude}`;
-                document.getElementById('locLon').textContent = `Lon: ${data.last_known_longitude}`;
-                document.getElementById('locAcc').textContent = `Accuracy: ${data.last_location_accuracy !== null ? data.last_location_accuracy + 'm' : 'N/A'}`;
-                document.getElementById('locTime').textContent = `Timestamp: ${formatDate(data.last_location_timestamp)}`;
-
-            } catch (error) {
-                showResponse('reportLocationResponse', 'Error reporting location: ' + error.message, false);
-            }
-        });
-
-        // Autofill location using browser's Geolocation API (NEW)
-        function autofillBrowserLocation() {
-            if (navigator.geolocation) {
-                showResponse('reportLocationResponse', 'Fetching browser location...', true);
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        document.getElementById('locLatitude').value = position.coords.latitude;
-                        document.getElementById('locLongitude').value = position.coords.longitude;
-                        if (position.coords.accuracy) {
-                            document.getElementById('locAccuracy').value = position.coords.accuracy;
-                        }
-                        showResponse('reportLocationResponse', 'Browser location autofilled. You can now submit.', true);
-                    },
-                    (error) => {
-                        let message = 'Error getting browser location: ';
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED: message += "User denied the request for Geolocation."; break;
-                            case error.POSITION_UNAVAILABLE: message += "Location information is unavailable."; break;
-                            case error.TIMEOUT: message += "The request to get user location timed out."; break;
-                            case error.UNKNOWN_ERROR: message += "An unknown error occurred."; break;
-                        }
-                        showResponse('reportLocationResponse', message, false);
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
+        // Simulate initial progress (real upload progress requires XHR or more complex Fetch API usage)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 5;
+            if (progress <= 30) { // Simulate upload taking up to 30%
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = progress + '%';
             } else {
-                showResponse('reportLocationResponse', 'Geolocation is not supported by this browser.', false);
+                clearInterval(progressInterval); // Stop this fake progress once "upload" is "done"
             }
-        }
+        }, 100);
 
+
+        try {
+            const response = await fetch('/transcribe', {
+                method: 'POST',
+                body: formData,
+            });
+
+            clearInterval(progressInterval); // Clear any remaining fake progress interval
+
+            // Simulate processing on server side
+            progressBar.style.width = '60%';
+            progressBar.textContent = '60%';
+            statusText.textContent = 'ម៉ាស៊ីនមេកំពុងដំណើរការឯកសារ...';
+
+
+            if (!response.ok) {
+                let errorData = { error: `Server responded with ${response.status} ${response.statusText}` };
+                try {
+                    // Try to parse JSON error from server, but handle if it's not JSON
+                    errorData = await response.json();
+                } catch (e) {
+                    console.warn('Could not parse JSON error from server response.', e);
+                    // If not JSON, try to get text (less common for API errors but possible)
+                    const textError = await response.text().catch(() => null);
+                    if (textError) {
+                        errorData.error = textError.substring(0, 200); // Show first 200 chars
+                    }
+                }
+                console.error('Server Error Response:', response.status, response.statusText, errorData);
+                statusText.textContent = `មានបញ្ហាពីម៉ាស៊ីនមេ៖ ${errorData.error || response.statusText}`;
+                statusText.style.color = 'red';
+                progressBarContainer.style.display = 'none'; // Hide progress on error
+                return; // Stop further processing
+            }
+
+            // If response.ok
+            const data = await response.json();
+            console.log('Server Success Response:', data);
+
+            progressBar.style.width = '100%';
+            progressBar.textContent = '១០០%';
+            setTimeout(() => { progressBarContainer.style.display = 'none'; }, 1200);
+
+            if (data.hasOwnProperty('transcript')) { // Check if 'transcript' key exists
+                transcribedText.value = data.transcript;
+                resultArea.style.display = 'block';
+                statusText.textContent = 'ការបម្លែងបានជោគជ័យ!';
+                statusText.style.color = 'green';
+            } else if (data.error) { // Should have been caught by !response.ok, but as a fallback
+                console.error('Server returned success status but error in JSON:', data.error);
+                statusText.textContent = `មានបញ្ហា៖ ${data.error}`;
+                statusText.style.color = 'red';
+            } else {
+                console.error('Server returned success status but unexpected JSON structure:', data);
+                statusText.textContent = 'ទទួលបានការឆ្លើយតបដែលមិនរំពឹងទុកពីម៉ាស៊ីនមេ។';
+                statusText.style.color = 'orange';
+            }
+
+        } catch (error) { // Catches network errors or errors in the try block itself
+            clearInterval(progressInterval);
+            progressBarContainer.style.display = 'none';
+            console.error('Fetch/Client-Side Error During Transcription:', error);
+            statusText.textContent = `មានបញ្ហាធ្ងន់ធ្ងរ៖ ${error.message}`;
+            statusText.style.color = 'red';
+        } finally {
+            transcribeButton.disabled = false;
+            uploadButton.disabled = false;
+            // Don't reset selectedFile or fileInput.value here if you want the user
+            // to see the filename after an attempt. Reset it on new selection (already done).
+            // To allow re-uploading the same file immediately if it failed:
+            // fileInput.value = ''; // This would clear the input field
+        }
+    });
+
+    copyButton.addEventListener('click', () => {
+        if (!transcribedText.value) {
+            statusText.textContent = 'មិនមានអត្ថបទសម្រាប់ចម្លងទេ។';
+            statusText.style.color = 'orange';
+            return;
+        }
+        transcribedText.select();
+        transcribedText.setSelectionRange(0, 99999); // For mobile devices
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                statusText.textContent = 'អត្ថបទបានចម្លងទៅកាន់ឃ្លីបបត!';
+                statusText.style.color = 'blue';
+            } else {
+                statusText.textContent = 'ការចម្លងបរាជ័យ។ កម្មវិធីរុករករបស់អ្នកប្រហែលជាមិនគាំទ្រវាទេ។';
+                statusText.style.color = 'red';
+            }
+        } catch (err) {
+            console.error('Copy to clipboard failed:', err);
+            statusText.textContent = 'ការចម្លងបរាជ័យដោយសារមានបញ្ហា។';
+            statusText.style.color = 'red';
+        }
+        window.getSelection().removeAllRanges(); // Deselect
+    });
+});
     </script>
 </body>
 </html>
